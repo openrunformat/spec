@@ -1,0 +1,4 @@
+{"k":"h","orf":"1.0","utc":1767225600000000000,"tz":"Europe/Madrid","id":"demo-truncated","discipline":"car","kind":"synthetic","device":"phone + external GNSS receiver"}
+{"k":"ch","id":"rpm","unit":"rpm","hz":2}
+{"k":"d","ch":"rpm","t0":0,"v":[1000,1500,2000]}
+{"k":"seg","kind":"lap","s":0,"e":1500000000,"src":"origin"}

@@ -1,0 +1,6 @@
+{"k":"h","orf":"1.0","utc":1767225600000000000,"id":"demo-trailing","kind":"synthetic"}
+{"k":"ch","id":"speed","unit":"m/s","hz":10}
+{"k":"d","ch":"speed","t0":0,"v":[1.0,2.0,3.0]}
+{"k":"end","dur":300000000,"n":3}
+{"k":"d","ch":"speed","t0":300000000,"v":[4.0,5.0]}
+{"k":"ev","kind":"note","s":0,"text":"written after end"}

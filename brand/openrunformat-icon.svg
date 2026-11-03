@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256">
+  <!-- Open Run Format · B (elegido): la traza entre llaves { } = datos abiertos y legibles (JSONL). -->
+  <rect width="64" height="64" rx="12" fill="#FFFFFF"/>
+  <path d="M18 14 C12 14 13 22 13 26 C13 30 10 32 8 32 C10 32 13 34 13 38 C13 42 12 50 18 50" stroke="#1E2A38" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M46 14 C52 14 51 22 51 26 C51 30 54 32 56 32 C54 32 51 34 51 38 C51 42 52 50 46 50" stroke="#1E2A38" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M19 34 H24 L27.5 26 L31 40 L34.5 29 H38 L41 35 H45" stroke="#E48312" stroke-width="3.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

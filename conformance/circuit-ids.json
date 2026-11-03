@@ -1,0 +1,100 @@
+{
+  "valid": [
+    {
+      "id": "ES-catalunya",
+      "circuit": "ES-catalunya",
+      "variant": null,
+      "provisional": false
+    },
+    {
+      "id": "ES-catalunya/gp",
+      "circuit": "ES-catalunya",
+      "variant": "gp",
+      "provisional": false
+    },
+    {
+      "id": "ES-catalunya/gp@2023",
+      "circuit": "ES-catalunya",
+      "variant": "gp@2023",
+      "provisional": false
+    },
+    {
+      "id": "ES-catalunya/gp@2023-04",
+      "circuit": "ES-catalunya",
+      "variant": "gp@2023-04",
+      "provisional": false
+    },
+    {
+      "id": "GB-brands-hatch/indy",
+      "circuit": "GB-brands-hatch",
+      "variant": "indy",
+      "provisional": false
+    },
+    {
+      "id": "ES-losarcos/completo",
+      "circuit": "ES-losarcos",
+      "variant": "completo",
+      "provisional": false
+    },
+    {
+      "id": "ES-a1/b2",
+      "circuit": "ES-a1",
+      "variant": "b2",
+      "provisional": false
+    },
+    {
+      "id": "ES-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "circuit": "ES-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "variant": null,
+      "provisional": false
+    },
+    {
+      "id": "local-0192f0c4-8b7a-7c3e-9a1d-3f5e6b7c8d9e",
+      "circuit": "local-0192f0c4-8b7a-7c3e-9a1d-3f5e6b7c8d9e",
+      "variant": null,
+      "provisional": true
+    },
+    {
+      "id": "local-0192f0c4-8b7a-7c3e-9a1d-3f5e6b7c8d9e/short",
+      "circuit": "local-0192f0c4-8b7a-7c3e-9a1d-3f5e6b7c8d9e",
+      "variant": "short",
+      "provisional": true
+    }
+  ],
+  "invalid": [
+    "",
+    "es-catalunya",
+    "ESP-catalunya",
+    "ES-Catalunya",
+    "ES-cataluña",
+    "ES-c",
+    "ES-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "ES-catalunya-",
+    "ES--catalunya",
+    "ES-cata--lunya",
+    "ES-catalunya/gp@23",
+    "ES-catalunya/gp@2023-13",
+    "ES-catalunya/gp@2023-4",
+    "ES-catalunya/@2023",
+    "ES-catalunya/gp/x",
+    "ES-catalunya/",
+    "local-0192F0C4-8B7A-7C3E-9A1D-3F5E6B7C8D9E",
+    "local-123",
+    "local-0192f0c48b7a7c3e9a1d3f5e6b7c8d9e",
+    "orf:circuit/ES-catalunya",
+    " ES-catalunya",
+    "ES-catalunya "
+  ],
+  "uris": {
+    "valid": [
+      "orf:circuit/ES-catalunya/gp@2023",
+      "orf:circuit/ES-jarama"
+    ],
+    "invalid": [
+      "ORF:circuit/ES-jarama",
+      "orf:circuits/ES-jarama",
+      "orf:circuit/",
+      "ES-jarama"
+    ]
+  }
+}

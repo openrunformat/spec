@@ -1,0 +1,10 @@
+{"k":"h","orf":"1.0","utc":1767225600000000000,"tz":"Europe/Madrid","id":"demo-stage","discipline":"car","kind":"real","device":"phone + external GNSS receiver"}
+{"k":"ch","id":"speed","unit":"m/s","hz":1}
+{"k":"ch","id":"lat","unit":"deg","hz":1}
+{"k":"ch","id":"lon","unit":"deg","hz":1}
+{"k":"course","start":[40.0000,-3.0000,40.0001,-3.0000],"finish":[40.0100,-3.0100,40.0101,-3.0100],"variant":"point-to-point"}
+{"k":"d","ch":"speed","t0":0,"v":[10,20,30]}
+{"k":"d","ch":"lat","t0":0,"v":[40.0,40.005,40.01]}
+{"k":"d","ch":"lon","t0":0,"v":[-3.0,-3.005,-3.01]}
+{"k":"seg","kind":"stage","s":0,"e":2000000000,"time":2000000000,"tol":50.0,"splits":[1000000000],"src":"gates"}
+{"k":"end","dur":3000000000,"n":9}

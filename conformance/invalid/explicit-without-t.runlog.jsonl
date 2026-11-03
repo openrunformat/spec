@@ -1,0 +1,3 @@
+{"k":"h","orf":"1.0","utc":1767225600000000000,"tz":"Europe/Madrid","id":"demo-no-t","discipline":"car","kind":"synthetic","device":"phone + external GNSS receiver"}
+{"k":"ch","id":"x-demo-marker","unit":""}
+{"k":"d","ch":"x-demo-marker","t0":0,"v":[1,2]}

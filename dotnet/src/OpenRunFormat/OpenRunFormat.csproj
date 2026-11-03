@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>OpenRunFormat</PackageId>
+    <Version>0.2.0</Version>
+    <RootNamespace>OpenRunFormat</RootNamespace>
+    <Description>Reader and writer for the Open Run Format (.runlog) telemetry file format.</Description>
+    <Authors>Kaizen Development Solutions</Authors>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/openrunformat/spec</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/openrunformat/spec</RepositoryUrl>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ZstdSharp.Port" Version="0.8.6" />
+    <InternalsVisibleTo Include="OpenRunFormat.Tests" />
+  </ItemGroup>
+</Project>

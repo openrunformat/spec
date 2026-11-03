@@ -1,0 +1,3 @@
+{"k":"h","orf":"1.0","utc":1767225600000000000,"id":"demo-invalid","kind":"synthetic"}
+{"k":"ch","id":"x-demo-mark","unit":""}
+{"k":"d","ch":"x-demo-mark","t0":0,"v":[1,2,3],"t":[0,500000000,500000000]}

@@ -1,0 +1,5 @@
+{"k":"h","orf":"1.0","utc":1767225600000000000,"tz":"UTC","id":"course-free-text-circuit","discipline":"car","kind":"synthetic"}
+{"k":"ch","id":"speed","unit":"m/s","hz":1}
+{"k":"course","start":[40.0000,-3.0000,40.0001,-3.0000],"finish":[40.0000,-3.0000,40.0001,-3.0000],"circuit":"My Track","variant":"Short Loop"}
+{"k":"d","ch":"speed","t0":0,"v":[10,20,30]}
+{"k":"end","dur":3000000000,"n":3}

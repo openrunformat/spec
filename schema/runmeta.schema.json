@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/openrunformat/spec/main/schema/runmeta.schema.json",
+  "title": "Open Run Format companion file (.runmeta)",
+  "description": "The instants s, e, t and splits are absolute Unix epoch nanoseconds; time in userSegments is a duration in nanoseconds. Unknown fields are allowed.",
+  "type": "object",
+  "required": ["orf", "id", "runlogSha256"],
+  "properties": {
+    "orf": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
+    "id": { "type": "string", "minLength": 1 },
+    "runlogSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+    "vehicle": { "type": "object", "additionalProperties": { "type": "string" } },
+    "setup": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["s", "e"],
+        "properties": {
+          "s": { "type": "integer" },
+          "e": { "type": "integer" },
+          "values": { "type": "object", "additionalProperties": { "type": "string" } }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["t", "text"],
+        "properties": { "t": { "type": "integer" }, "text": { "type": "string" } }
+      }
+    },
+    "userSegments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "s", "e", "src"],
+        "properties": {
+          "kind": { "type": "string" },
+          "s": { "type": "integer" },
+          "e": { "type": "integer" },
+          "time": { "type": "integer" },
+          "tol": { "type": "number" },
+          "splits": { "type": "array", "items": { "type": "integer" } },
+          "src": { "type": "string" }
+        }
+      }
+    }
+  }
+}

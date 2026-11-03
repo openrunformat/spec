@@ -1,0 +1,1 @@
+{"complete":true,"channels":{"speed":{"n":3,"times":[0,1000000000,2000000000],"values":[10,20,30]}},"segments":0,"kind":"synthetic","end":{"dur":3000000000,"n":3},"course":{"circuit":"ZZ-conformance","variant":"gp@2024","circuitUid":"0192f0c4-8b7a-7c3e-9a1d-3f5e6b7c8d9e","variantUid":"0192f0c4-8b7a-7c3e-9a1d-3f5e6b7c8d9f","gates":"registry","circuitIdValid":true}}

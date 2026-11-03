@@ -1,0 +1,7 @@
+{"k":"h","orf":"1.0","utc":1767225600000000000,"tz":"Europe/Madrid","id":"demo-regular-explicit","discipline":"car","kind":"synthetic","device":"phone + external GNSS receiver"}
+{"k":"ch","id":"speed","unit":"m/s","src":"gnss","hz":10}
+{"k":"ch","id":"x-demo-marker","unit":"","src":"button"}
+{"k":"d","ch":"speed","t0":0,"v":[0.0,1.5,3.25,null]}
+{"k":"d","ch":"x-demo-marker","t0":0,"v":[1,2,1],"t":[0,130000000,420000000]}
+{"k":"d","ch":"speed","t0":400000000,"v":[5.0,6.5,8.0]}
+{"k":"end","dur":700000000,"n":10}

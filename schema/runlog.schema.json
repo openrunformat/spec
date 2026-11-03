@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/openrunformat/spec/main/schema/runlog.schema.json",
+  "title": "Open Run Format record",
+  "description": "Schema of ONE record (one line) of a .runlog file after decompression. Validate each line separately. Unknown fields are allowed everywhere and records with an unknown 'k' are valid (forward compatibility). Cross-record rules (first line is the header, channel declared before its samples, block ordering, strictly increasing times) are not expressible here; see SPEC.md.",
+  "type": "object",
+  "required": ["k"],
+  "properties": { "k": { "type": "string" } },
+  "oneOf": [
+    { "$ref": "#/$defs/header" },
+    { "$ref": "#/$defs/channel" },
+    { "$ref": "#/$defs/block" },
+    { "$ref": "#/$defs/course" },
+    { "$ref": "#/$defs/segment" },
+    { "$ref": "#/$defs/event" },
+    { "$ref": "#/$defs/end" },
+    { "$ref": "#/$defs/unknown" }
+  ],
+  "$defs": {
+    "ns": { "type": "integer" },
+    "nonNegNs": { "type": "integer", "minimum": 0 },
+    "gate": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "type": "number" },
+      "description": "[lat1, lon1, lat2, lon2] in degrees WGS84."
+    },
+    "tool": {
+      "type": "object",
+      "required": ["id", "version"],
+      "properties": { "id": { "type": "string" }, "version": { "type": "string" } }
+    },
+    "header": {
+      "type": "object",
+      "required": ["k", "orf", "utc", "id", "kind"],
+      "properties": {
+        "k": { "const": "h" },
+        "orf": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
+        "utc": { "$ref": "#/$defs/ns" },
+        "tz": { "type": "string" },
+        "id": { "type": "string", "minLength": 1 },
+        "discipline": { "type": "string" },
+        "kind": { "enum": ["real", "sim", "synthetic"] },
+        "device": { "type": "string" },
+        "converter": { "$ref": "#/$defs/tool" },
+        "writer": { "$ref": "#/$defs/tool" },
+        "sourceFiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "sha256"],
+            "properties": { "name": { "type": "string" }, "sha256": { "type": "string" } }
+          }
+        },
+        "precision": {
+          "type": "object",
+          "properties": { "segTolMs": { "type": "number" }, "gpsHz": { "type": "number" } }
+        },
+        "meta": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "channel": {
+      "type": "object",
+      "required": ["k", "id", "unit"],
+      "properties": {
+        "k": { "const": "ch" },
+        "id": { "type": "string", "minLength": 1 },
+        "unit": { "type": "string" },
+        "src": { "type": "string" },
+        "hz": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000000 }
+      }
+    },
+    "block": {
+      "type": "object",
+      "required": ["k", "ch", "t0", "v"],
+      "properties": {
+        "k": { "const": "d" },
+        "ch": { "type": "string", "minLength": 1 },
+        "t0": { "$ref": "#/$defs/ns" },
+        "v": { "type": "array", "items": { "type": ["number", "null"] } },
+        "t": { "type": "array", "items": { "$ref": "#/$defs/ns" } }
+      }
+    },
+    "course": {
+      "type": "object",
+      "required": ["k", "start", "finish"],
+      "properties": {
+        "k": { "const": "course" },
+        "start": { "$ref": "#/$defs/gate" },
+        "finish": { "$ref": "#/$defs/gate" },
+        "splits": { "type": "array", "items": { "$ref": "#/$defs/gate" } },
+        "circuit": { "type": "string" },
+        "variant": { "type": "string" },
+        "circuitUid": { "type": "string", "format": "uuid", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
+        "variantUid": { "type": "string", "format": "uuid", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
+        "gates": { "type": "string" }
+      }
+    },
+    "segment": {
+      "type": "object",
+      "required": ["k", "kind", "s", "e", "src"],
+      "properties": {
+        "k": { "const": "seg" },
+        "kind": { "type": "string", "minLength": 1 },
+        "s": { "$ref": "#/$defs/ns" },
+        "e": { "$ref": "#/$defs/ns" },
+        "time": { "$ref": "#/$defs/ns" },
+        "tol": { "type": "number" },
+        "splits": { "type": "array", "items": { "$ref": "#/$defs/ns" } },
+        "src": { "type": "string", "minLength": 1 }
+      }
+    },
+    "event": {
+      "type": "object",
+      "required": ["k", "kind", "s"],
+      "properties": {
+        "k": { "const": "ev" },
+        "kind": { "type": "string", "minLength": 1 },
+        "s": { "$ref": "#/$defs/ns" },
+        "e": { "$ref": "#/$defs/ns" },
+        "text": { "type": "string" }
+      }
+    },
+    "end": {
+      "type": "object",
+      "required": ["k", "dur", "n"],
+      "properties": {
+        "k": { "const": "end" },
+        "dur": { "$ref": "#/$defs/nonNegNs" },
+        "n": { "$ref": "#/$defs/nonNegNs" }
+      }
+    },
+    "unknown": {
+      "type": "object",
+      "required": ["k"],
+      "properties": { "k": { "not": { "enum": ["h", "ch", "d", "course", "seg", "ev", "end"] } } }
+    }
+  }
+}

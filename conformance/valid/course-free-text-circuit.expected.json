@@ -1,0 +1,1 @@
+{"complete":true,"channels":{"speed":{"n":3,"times":[0,1000000000,2000000000],"values":[10,20,30]}},"segments":0,"kind":"synthetic","end":{"dur":3000000000,"n":3},"course":{"circuit":"My Track","variant":"Short Loop","circuitUid":null,"variantUid":null,"gates":null,"circuitIdValid":false}}

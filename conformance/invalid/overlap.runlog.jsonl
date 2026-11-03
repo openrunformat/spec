@@ -1,0 +1,4 @@
+{"k":"h","orf":"1.0","utc":1767225600000000000,"tz":"Europe/Madrid","id":"demo-overlap","discipline":"car","kind":"synthetic","device":"phone + external GNSS receiver"}
+{"k":"ch","id":"rpm","unit":"rpm","hz":2}
+{"k":"d","ch":"rpm","t0":0,"v":[1,2,3]}
+{"k":"d","ch":"rpm","t0":1000000000,"v":[4,5]}

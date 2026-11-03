@@ -1,0 +1,5 @@
+{"k":"h","orf":"1.7","utc":1767225600000000000,"id":"demo-unknown","kind":"synthetic","futureHeaderField":{"a":[1,2]}}
+{"k":"ch","id":"rpm","unit":"rpm","hz":2,"futureChannelField":true}
+{"k":"zz-future","payload":[1,2,3]}
+{"k":"d","ch":"rpm","t0":0,"v":[1000,1500],"quality":"good"}
+{"k":"end","dur":1000000000,"n":2,"extra":1}
