@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 — specification 1.1 (draft), drivers
+
+- Spec: the companion file `.runmeta` gains `drivers` (section 8): non-overlapping, half-open intervals with `id`,
+  `name` and optional `initials`; a reader ignores the whole field when an entry is malformed or intervals overlap.
+  `id` is opaque and not derived from personal data; `name` is personal data (include it only with consent).
+- Schema: `drivers` in `runmeta.schema.json`.
+- Library: `DriverInterval` and `RunMeta.Drivers` (never null); the writer emits `drivers` and `orf` 1.1; the reader
+  returns an empty list for a malformed field, including empty `id` or `name`.
+- Conformance: `conformance/runmeta/valid/` with `drivers` and `drivers-overlap-ignored`.
+
 ## 0.2.0 — specification 1.0 (draft), circuit identifiers
 
 - Spec: new section 10, circuit identifiers (grammar, variants and versions, stable UUIDs, aliases, provisional

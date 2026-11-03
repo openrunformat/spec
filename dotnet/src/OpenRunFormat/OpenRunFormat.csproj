@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>OpenRunFormat</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <RootNamespace>OpenRunFormat</RootNamespace>
     <Description>Reader and writer for the Open Run Format (.runlog) telemetry file format.</Description>
     <Authors>Kaizen Development Solutions</Authors>

@@ -61,9 +61,9 @@ public class WriterReaderTests
         var ms = new MemoryStream();
         using (var w = new RunlogWriter(ms, Header("9.9"), Plain)) w.Complete();
         ms.Position = 0;
-        Assert.Equal("1.0", RunlogReader.Read(ms).Header.Orf);
+        Assert.Equal(RunFormat.Version, RunlogReader.Read(ms).Header.Orf);
         ms.Position = 0;
-        Assert.Equal("1.0", RunlogReader.ReadHeader(ms).Orf);
+        Assert.Equal(RunFormat.Version, RunlogReader.ReadHeader(ms).Orf);
     }
 
     [Fact]

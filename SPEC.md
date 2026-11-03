@@ -1,6 +1,6 @@
-# Open Run Format (ORF) 1.0 — draft
+# Open Run Format (ORF) 1.1 — draft
 
-File extension: `.runlog`. Companion file: `.runmeta`. Specification version: `1.0` (draft, see `CHANGELOG.md`).
+File extension: `.runlog`. Companion file: `.runmeta`. Specification version: `1.1` (draft, see `CHANGELOG.md`).
 
 The key words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119.
 
@@ -341,12 +341,24 @@ are **absolute Unix epoch nanoseconds**, never relative file times and never sam
 | `runlogSha256` | string | R | SHA-256 of the whole `.runlog` file, lower-case hex (readers compare case-insensitively) |
 | `vehicle` | object | O | Free dictionary of strings |
 | `setup` | array | O | Objects `{ "s": ns, "e": ns, "values": { string: string } }` — a configuration (pressures, modes, tyres...) valid for an interval |
+| `drivers` | array | O | Objects `{ "s": ns, "e": ns, "id": string, "name": string, "initials": string (O) }` — who was driving during the interval. Intervals MUST NOT overlap; a reader that finds overlapping or malformed entries ignores the whole field without rejecting the file. A gap means "no driver recorded". |
 | `notes` | array | O | Objects `{ "t": ns, "text": string }` |
 | `userSegments` | array | O | Segments defined by the user, with the same fields as a `seg` record without `k` (`kind`, `s`, `e`, `src` required) |
 
 A `.runmeta` belongs to a `.runlog` only if its `id` equals the header `id` exactly and its `runlogSha256` equals the
 hash of the file; otherwise a consumer MUST NOT apply it. Unknown fields are ignored. The vocabulary of `vehicle` and
 `setup` keys is free for now and will be specified in later minor versions.
+
+`drivers` (added in 1.1): `s` and `e` are absolute epoch nanoseconds with `e > s`, and each interval is half-open
+(`[s, e)`), so adjacent intervals (`e` of one equal to `s` of the next) do not overlap. `id` and `name` are non-empty
+strings; `initials`, if present, is a string. A reader ignores the whole field (as if absent) when any entry is
+not an object, lacks `s`, `e`, `id` or `name`, has a value of the wrong type, has an empty `id` or `name`, has
+`e <= s`, or overlaps another entry; the rest of the file is still read. Entries may appear in any order.
+
+`id` is an opaque, stable identifier chosen by the writer: it SHOULD be random (for example a UUID) and MUST NOT be
+derived from personal data (name, e-mail, account). Consumers use it to tell whether two intervals are the same
+person. `name` is personal data: writers SHOULD only include it with the user's consent, and anyone sharing a
+`.runmeta` should remember it contains that name.
 
 ## 9. Conformance
 
@@ -356,6 +368,8 @@ The directory `conformance/` contains synthetic files that every implementation 
   `{"complete": bool, "trailingContent": bool (optional, default false), "channels": {"<id>": <number of samples>}, "segments": n, "kind": "real|sim|synthetic"}`. A reader
   MUST accept the file and produce those values.
 - `conformance/invalid/*`: a reader MUST reject each file.
+- `conformance/runmeta/valid/<name>.runmeta` with `<name>.expected.json` `{"drivers": n}`: a reader MUST accept the
+  file and produce that number of drivers (an ignored `drivers` field counts as 0).
 - `conformance/circuit-ids.json`: lists of valid and invalid circuit identifiers (section 10) and of valid and invalid
   `orf:circuit/` URIs. For each valid entry it gives the circuit part, the variant (or `null`) and whether the id is
   provisional. An implementation of the grammar MUST accept every valid entry with those parts and reject every
