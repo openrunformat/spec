@@ -22,6 +22,20 @@
         }
       }
     },
+    "drivers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["s", "e", "id", "name"],
+        "properties": {
+          "s": { "type": "integer" },
+          "e": { "type": "integer" },
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "initials": { "type": "string" }
+        }
+      }
+    },
     "notes": {
       "type": "array",
       "items": {

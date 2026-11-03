@@ -1,6 +1,6 @@
-# Open Run Format (ORF) 1.0 — resumen en español
+# Open Run Format (ORF) 1.1 — resumen en español
 
-Este resumen no es normativo: manda [SPEC.md](SPEC.md) (inglés). Versión de la especificación: 1.0 (borrador).
+Este resumen no es normativo: manda [SPEC.md](SPEC.md) (inglés). Versión de la especificación: 1.1 (borrador).
 
 ## Qué es
 
@@ -83,8 +83,16 @@ no fuerza la escritura a disco (no hace fsync). Quien reescribe un fichero exist
 ## `.runmeta`
 
 Fichero aparte, opcional, JSON sin comprimir: `orf`, `id`, `runlogSha256` y opcionales `vehicle`, `setup`
-(`{s, e, values}`), `notes` (`{t, text}`) y `userSegments`. Los instantes (`s`, `e`, `t`, `splits`) son **epoch ns absolutos**; `time` de `userSegments` sigue siendo una duración. Solo se
+(`{s, e, values}`), `drivers` (`{s, e, id, name, initials?}`, desde 1.1), `notes` (`{t, text}`) y `userSegments`. Los instantes (`s`, `e`, `t`, `splits`) son **epoch ns absolutos**; `time` de `userSegments` sigue siendo una duración. Solo se
 aplica si `id` coincide con el de la cabecera y el hash con el del `.runlog`.
+
+`drivers` (1.1): quién conducía en cada intervalo. `s` y `e` son epoch ns absolutos con `e > s` y el intervalo es
+semiabierto (`[s, e)`): dos intervalos contiguos no se solapan. `id` y `name` son cadenas no vacías; `initials` es
+opcional. Los intervalos NO DEBEN solaparse. Un lector ignora todo el campo (como si no existiera) si alguna entrada no
+es un objeto, le falta `s`, `e`, `id` o `name`, tiene un tipo erróneo, `id` o `name` vacíos, `e <= s` o se solapa con
+otra; el resto del fichero se lee igual. Un hueco significa «sin piloto registrado». `id` es un identificador opaco y
+estable que elige el escritor: DEBERÍA ser aleatorio y NO DEBE derivarse de datos personales. `name` es un dato
+personal: los escritores DEBERÍAN incluirlo solo con el consentimiento del usuario.
 
 ## Identificadores de circuito
 

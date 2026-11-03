@@ -213,6 +213,15 @@ public class RunMetaTests : IDisposable
         Assert.Empty(RunMetaFile.Read(path).Drivers);
     }
 
+    [Theory]
+    [InlineData("""[{"s":0,"e":10,"id":"","name":"A"}]""")]
+    [InlineData("""[{"s":0,"e":10,"id":"a","name":""}]""")]
+    public void Driver_con_id_o_name_vacio_se_ignora_el_campo(string drivers)
+    {
+        var path = WriteRaw(_dir, RawWithDrivers("1.1", drivers));
+        Assert.Empty(RunMetaFile.Read(path).Drivers);
+    }
+
     [Fact]
     public void Escribe_orf_1_1()
     {

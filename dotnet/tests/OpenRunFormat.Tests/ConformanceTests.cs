@@ -1,4 +1,5 @@
 using System.Text.Json;
+using OpenRunFormat.Meta;
 using Json.Schema;
 
 namespace OpenRunFormat.Tests;
@@ -78,6 +79,27 @@ public class ConformanceTests
             Assert.Equal(S(ec, "gates"), doc.Course.Gates);
             Assert.Equal(ec.GetProperty("circuitIdValid").GetBoolean(), CircuitId.TryFromCourse(doc.Course, out _));
         }
+    }
+
+    public static IEnumerable<TheoryDataRow<string>> ValidRunmetaFiles()
+    {
+        var path = Path.Combine(Root, "runmeta", "valid");
+        var files = Directory.Exists(path) ? Directory.GetFiles(path, "*.runmeta") : [];
+        var any = false;
+        foreach (var f in files.OrderBy(f => f, StringComparer.Ordinal)) { any = true; yield return new TheoryDataRow<string>(Path.GetFileName(f)); }
+        if (!any) yield return new TheoryDataRow<string>("<no conformance files found>");
+    }
+
+    [Theory]
+    [MemberData(nameof(ValidRunmetaFiles))]
+    public void Runmeta_valid_cumple_expected(string name)
+    {
+        var path = Path.Combine(Root, "runmeta", "valid", name);
+        var expected = JsonDocument.Parse(File.ReadAllText(Path.ChangeExtension(path, ".expected.json"))).RootElement;
+
+        var meta = RunMetaFile.Read(path);
+
+        Assert.Equal(expected.GetProperty("drivers").GetInt32(), meta.Drivers.Count);
     }
 
     [Theory]
