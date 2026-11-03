@@ -49,6 +49,18 @@ public static class RunMetaFile
                 w.WriteEndObject();
             }
             w.WriteEndArray();
+            w.WriteStartArray("drivers");
+            foreach (var d in meta.Drivers)
+            {
+                w.WriteStartObject();
+                w.WriteNumber("s", d.S);
+                w.WriteNumber("e", d.E);
+                w.WriteString("id", d.Id);
+                w.WriteString("name", d.Name);
+                if (d.Initials is not null) w.WriteString("initials", d.Initials);
+                w.WriteEndObject();
+            }
+            w.WriteEndArray();
             w.WriteStartArray("notes");
             foreach (var n in meta.Notes)
             {
@@ -113,8 +125,10 @@ public static class RunMetaFile
                     segments.Add(RecordCodec.ReadSegmentBody(s));
                 }
 
+            var drivers = ReadDrivers(r);
+
             return new RunMeta(orf, RecordCodec.Req(r, "id").GetString()!, RecordCodec.Req(r, "runlogSha256").GetString()!,
-                vehicle, setup, notes, segments);
+                vehicle, setup, notes, segments, drivers);
         }
         catch (FormatException) { throw; }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException or OverflowException)
@@ -122,6 +136,32 @@ public static class RunMetaFile
             throw new FormatException("Invalid companion file: " + ex.Message, ex);
         }
     }
+
+    // A malformed list (missing/invalid field, e <= s, overlap) is ignored as a whole; the rest of the file still reads.
+    private static List<DriverInterval> ReadDrivers(JsonElement root)
+    {
+        var result = new List<DriverInterval>();
+        if (RecordCodec.Opt(root, "drivers") is not { ValueKind: JsonValueKind.Array } arr) return result;
+        foreach (var d in arr.EnumerateArray())
+        {
+            if (d.ValueKind != JsonValueKind.Object
+                || !TryGet(d, "s", JsonValueKind.Number, out var sEl) || !sEl.TryGetInt64(out var s)
+                || !TryGet(d, "e", JsonValueKind.Number, out var eEl) || !eEl.TryGetInt64(out var e)
+                || !TryGet(d, "id", JsonValueKind.String, out var idEl)
+                || !TryGet(d, "name", JsonValueKind.String, out var nameEl)
+                || e <= s)
+                return [];
+            var initials = TryGet(d, "initials", JsonValueKind.String, out var inEl) ? inEl.GetString() : null;
+            result.Add(new DriverInterval(s, e, idEl.GetString()!, nameEl.GetString()!, initials));
+        }
+        result.Sort((a, b) => a.S.CompareTo(b.S));
+        for (var i = 1; i < result.Count; i++)
+            if (result[i].S < result[i - 1].E) return [];
+        return result;
+    }
+
+    private static bool TryGet(JsonElement obj, string name, JsonValueKind kind, out JsonElement value)
+        => obj.TryGetProperty(name, out value) && value.ValueKind == kind;
 
     /// <summary>SHA-256 of the whole .runlog file, as lowercase hex.</summary>
     public static string Sha256Of(string runlogPath)

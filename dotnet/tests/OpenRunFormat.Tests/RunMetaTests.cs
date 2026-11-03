@@ -159,4 +159,68 @@ public class RunMetaTests : IDisposable
         Assert.Equal("hi", Assert.Single(read.Notes).Text);
         Assert.Equal("lap", Assert.Single(read.UserSegments).Kind);
     }
+
+    private static string WriteRaw(string dir, string json)
+    {
+        var path = Path.Combine(dir, "raw.runmeta");
+        File.WriteAllText(path, json);
+        return path;
+    }
+
+    private static string RawWithDrivers(string orf, string driversJson) =>
+        $$"""{"orf":"{{orf}}","id":"run-1","runlogSha256":"00","vehicle":{},"setup":[],"drivers":{{driversJson}},"notes":[],"userSegments":[]}""";
+
+    [Fact]
+    public void Drivers_ida_y_vuelta()
+    {
+        var path = Path.Combine(_dir, "drv.runmeta");
+        var meta = Sample() with
+        {
+            Drivers = [new DriverInterval(0, 10, "id-a", "Fer", "FZ"), new DriverInterval(10, 20, "id-b", "Juan")],
+        };
+        RunMetaFile.Write(path, meta);
+
+        var read = RunMetaFile.Read(path);
+
+        Assert.Equal(meta.Drivers, read.Drivers);
+        var json = File.ReadAllText(path);
+        Assert.Contains("\"drivers\"", json);
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        var second = doc.RootElement.GetProperty("drivers")[1];
+        Assert.False(second.TryGetProperty("initials", out _));
+        Assert.True(doc.RootElement.GetProperty("drivers")[0].TryGetProperty("initials", out _));
+    }
+
+    [Fact]
+    public void Sin_drivers_lee_lista_vacia()
+    {
+        var path = WriteRaw(_dir, """{"orf":"1.0","id":"run-1","runlogSha256":"00"}""");
+        Assert.Empty(RunMetaFile.Read(path).Drivers);
+    }
+
+    [Fact]
+    public void Drivers_solapados_se_ignoran()
+    {
+        var path = WriteRaw(_dir, RawWithDrivers("1.1",
+            """[{"s":0,"e":10,"id":"a","name":"A"},{"s":5,"e":15,"id":"b","name":"B"}]"""));
+        Assert.Empty(RunMetaFile.Read(path).Drivers);
+    }
+
+    [Fact]
+    public void Driver_sin_id_o_name_se_ignora_el_campo()
+    {
+        var path = WriteRaw(_dir, RawWithDrivers("1.1", """[{"s":0,"e":10,"name":"A"}]"""));
+        Assert.Empty(RunMetaFile.Read(path).Drivers);
+    }
+
+    [Fact]
+    public void Escribe_orf_1_1()
+    {
+        var path = Path.Combine(_dir, "v.runmeta");
+        RunMetaFile.Write(path, Sample());
+        Assert.Contains("\"orf\": \"1.1\"", File.ReadAllText(path));
+
+        var future = WriteRaw(_dir, RawWithDrivers("1.7", "[]"));
+        Assert.Equal("1.7", RunMetaFile.Read(future).Orf);
+    }
 }
