@@ -223,6 +223,13 @@ public class RunMetaTests : IDisposable
     }
 
     [Fact]
+    public void Driver_con_initials_no_cadena_se_ignora_el_campo()
+    {
+        var path = WriteRaw(_dir, RawWithDrivers("1.1", """[{"s":0,"e":10,"id":"a","name":"A","initials":5}]"""));
+        Assert.Empty(RunMetaFile.Read(path).Drivers);
+    }
+
+    [Fact]
     public void Escribe_orf_1_1()
     {
         var path = Path.Combine(_dir, "v.runmeta");

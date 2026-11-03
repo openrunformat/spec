@@ -123,6 +123,8 @@ circuito = `ES-catalunya`; id de variante = `ES-catalunya/gp@2023`. En `course` 
 `conformance/valid` (con `<nombre>.expected.json`, que incluye tiempos, valores y `end` cuando se declaran) debe leerse;
 `conformance/invalid` (un fichero por regla de la sección 4 de SPEC.md) debe rechazarse. La prosa de SPEC.md manda: los
 esquemas JSON pueden ser más estrictos.
+`conformance/runmeta/valid/<nombre>.runmeta` con `<nombre>.expected.json` `{"drivers": n}`: un lector DEBE aceptar el
+fichero y producir ese número de pilotos (un campo `drivers` ignorado cuenta 0).
 `conformance/circuit-ids.json` lista ids y URI válidos e inválidos; `expected.json` puede llevar un bloque `course`.
 Esquemas JSON en `schema/` (un registro por línea). Un campo opcional con tipo JSON incorrecto (p. ej. un valor de `meta`
 que no es cadena) invalida el fichero.

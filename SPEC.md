@@ -368,6 +368,8 @@ The directory `conformance/` contains synthetic files that every implementation 
   `{"complete": bool, "trailingContent": bool (optional, default false), "channels": {"<id>": <number of samples>}, "segments": n, "kind": "real|sim|synthetic"}`. A reader
   MUST accept the file and produce those values.
 - `conformance/invalid/*`: a reader MUST reject each file.
+- `conformance/runmeta/valid/<name>.runmeta` with `<name>.expected.json` `{"drivers": n}`: a reader MUST accept the
+  file and produce that number of drivers (an ignored `drivers` field counts as 0).
 - `conformance/circuit-ids.json`: lists of valid and invalid circuit identifiers (section 10) and of valid and invalid
   `orf:circuit/` URIs. For each valid entry it gives the circuit part, the variant (or `null`) and whether the id is
   provisional. An implementation of the grammar MUST accept every valid entry with those parts and reject every

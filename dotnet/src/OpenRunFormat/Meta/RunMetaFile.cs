@@ -137,7 +137,7 @@ public static class RunMetaFile
         }
     }
 
-    // A malformed list (missing/invalid/empty id or name, e <= s, overlap) is ignored as a whole; the rest of the file still reads.
+    // A malformed list (missing/invalid/empty id or name, non-string initials, e <= s, overlap) is ignored as a whole; the rest of the file still reads.
     private static List<DriverInterval> ReadDrivers(JsonElement root)
     {
         var result = new List<DriverInterval>();
@@ -152,7 +152,12 @@ public static class RunMetaFile
                 || e <= s
                 || string.IsNullOrEmpty(idEl.GetString()) || string.IsNullOrEmpty(nameEl.GetString()))
                 return [];
-            var initials = TryGet(d, "initials", JsonValueKind.String, out var inEl) ? inEl.GetString() : null;
+            string? initials = null;
+            if (d.TryGetProperty("initials", out var inEl))
+            {
+                if (inEl.ValueKind != JsonValueKind.String) return [];
+                initials = inEl.GetString();
+            }
             result.Add(new DriverInterval(s, e, idEl.GetString()!, nameEl.GetString()!, initials));
         }
         result.Sort((a, b) => a.S.CompareTo(b.S));
