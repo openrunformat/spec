@@ -230,11 +230,11 @@ public class RunMetaTests : IDisposable
     }
 
     [Fact]
-    public void Escribe_orf_1_1()
+    public void Escribe_orf_1_2()
     {
         var path = Path.Combine(_dir, "v.runmeta");
         RunMetaFile.Write(path, Sample());
-        Assert.Contains("\"orf\": \"1.1\"", File.ReadAllText(path));
+        Assert.Contains("\"orf\": \"1.2\"", File.ReadAllText(path));
 
         var future = WriteRaw(_dir, RawWithDrivers("1.7", "[]"));
         Assert.Equal("1.7", RunMetaFile.Read(future).Orf);

@@ -1,0 +1,5 @@
+{"k":"h","orf":"1.2","utc":1767225612000000000,"tz":"Europe/Madrid","id":"demo-lap@12000000000-24000000000","discipline":"car","kind":"synthetic","derivedFrom":{"id":"demo-lap","s":12000000000,"e":24000000000}}
+{"k":"ch","id":"speed","unit":"m/s","hz":10}
+{"k":"d","ch":"speed","t0":0,"v":[30,31,32,33,34,35,36,37,38,39]}
+{"k":"seg","kind":"lap","s":0,"e":1000000000,"src":"origin"}
+{"k":"end","dur":1000000000,"n":10}

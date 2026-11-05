@@ -5,7 +5,7 @@ Time is always integer nanoseconds; records are compact JSON lines (UTF-8, no BO
 independent frames so that a recording survives a sudden stop.
 
 - **Repository:** <https://github.com/openrunformat/spec>
-- **Specification:** [SPEC.md](SPEC.md) (normative, English) · [SPEC.es.md](SPEC.es.md) (summary, Spanish) · status: 1.1 draft.
+- **Specification:** [SPEC.md](SPEC.md) (normative, English) · [SPEC.es.md](SPEC.es.md) (summary, Spanish) · status: 1.2 draft.
 - **JSON schemas:** [schema/](schema/). **Conformance files:** [conformance/](conformance/).
 - **Circuit identifiers:** SPEC §10; registry: <https://github.com/openrunformat/circuits>
 - Inspired by [Motorsport Telemetry JSON (MTJ)](https://github.com/tobi/motorsport-telemetry-rs) (MIT); no code was copied.

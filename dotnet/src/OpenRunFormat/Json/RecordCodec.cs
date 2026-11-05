@@ -113,6 +113,16 @@ internal static class RecordCodec
             WriteOptDouble(w, "gpsHz", p.Precision.GpsHz);
             w.WriteEndObject();
         }
+        if (h.DerivedFrom is { } d)
+        {
+            if (string.IsNullOrEmpty(d.Id) || d.S < 0 || d.E <= d.S)
+                throw new ArgumentException("derivedFrom needs a non-empty id and 0 <= s < e.");
+            w.WriteStartObject("derivedFrom");
+            w.WriteString("id", d.Id);
+            w.WriteNumber("s", d.S);
+            w.WriteNumber("e", d.E);
+            w.WriteEndObject();
+        }
         if (h.Meta is { Count: > 0 })
         {
             w.WriteStartObject("meta");
@@ -311,7 +321,18 @@ internal static class RecordCodec
             foreach (var p in m.EnumerateObject()) meta[p.Name] = p.Value.GetString() ?? "";
         var prov = new Provenance(kind, OptString(r, "device"), ReadTool(r, "converter"), ReadTool(r, "writer"), files, precision);
         return new RunHeader(Req(r, "orf").GetString()!, Req(r, "utc").GetInt64(), OptString(r, "tz"),
-            Req(r, "id").GetString()!, OptString(r, "discipline"), prov, meta);
+            Req(r, "id").GetString()!, OptString(r, "discipline"), prov, meta, ReadDerivedFrom(r));
+    }
+
+    /// <summary>derivedFrom (spec 1.2): a malformed value is ignored (null), never a reason to reject the file.</summary>
+    private static DerivedFrom? ReadDerivedFrom(JsonElement r)
+    {
+        if (Opt(r, "derivedFrom") is not { ValueKind: JsonValueKind.Object } d) return null;
+        if (!d.TryGetProperty("id", out var id) || id.ValueKind != JsonValueKind.String || id.GetString() is not { Length: > 0 } ids)
+            return null;
+        if (!d.TryGetProperty("s", out var s) || s.ValueKind != JsonValueKind.Number || !s.TryGetInt64(out var sv)) return null;
+        if (!d.TryGetProperty("e", out var e) || e.ValueKind != JsonValueKind.Number || !e.TryGetInt64(out var ev)) return null;
+        return sv >= 0 && ev > sv ? new DerivedFrom(ids, sv, ev) : null;
     }
 
     private static ToolRef? ReadTool(JsonElement r, string name)

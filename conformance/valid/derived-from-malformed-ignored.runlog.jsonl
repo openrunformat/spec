@@ -1,0 +1,4 @@
+{"k":"h","orf":"1.2","utc":1767225612000000000,"id":"demo-lap-bad","kind":"synthetic","derivedFrom":{"id":"demo-lap","s":24000000000,"e":12000000000}}
+{"k":"ch","id":"speed","unit":"m/s","hz":10}
+{"k":"d","ch":"speed","t0":0,"v":[30,31,32]}
+{"k":"end","dur":300000000,"n":3}

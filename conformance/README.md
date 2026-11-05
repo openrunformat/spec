@@ -3,7 +3,8 @@
 Files a reader of Open Run Format can test itself against.
 
 - `valid/`: each `*.runlog.jsonl` or `*.runlog` must be read without errors; its `*.expected.json` says what a reader
-  must report (see SPEC §9).
+  must report (see SPEC §9), including `derivedFrom` when the key is present. Files named `*-malformed-ignored` test that a reader ignores a
+  malformed optional field: a reader must accept them, but a writer must not produce them (they do not match the schema).
 - `invalid/`: each file must be rejected.
 - `runmeta/valid/`: each `*.runmeta` must be read without errors; its `*.expected.json` gives the number of driver
   intervals a reader must report (`{"drivers": n}`; an ignored field counts 0), see SPEC §8.
