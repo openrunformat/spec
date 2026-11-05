@@ -1,6 +1,6 @@
-# Open Run Format (ORF) 1.1 — resumen en español
+# Open Run Format (ORF) 1.2 — resumen en español
 
-Este resumen no es normativo: manda [SPEC.md](SPEC.md) (inglés). Versión de la especificación: 1.1 (borrador).
+Este resumen no es normativo: manda [SPEC.md](SPEC.md) (inglés). Versión de la especificación: 1.2 (borrador).
 
 ## Qué es
 
@@ -28,7 +28,12 @@ Inspirado en MTJ (<https://github.com/tobi/motorsport-telemetry-rs>, MIT); no se
 
 - **Cabecera**: `orf` (p. ej. `"1.0"`), `utc`, `id`, `kind` (`real`, `sim` o `synthetic`, obligatorio), y opcionales `tz`,
   `discipline` (`car`, `motorbike`, `bike`, `kart`, `other`), `device`, `converter`/`writer` (`{id, version}`),
-  `sourceFiles` (`{name, sha256}`), `precision` (`segTolMs`, `gpsHz`) y `meta` (cadenas).
+  `sourceFiles` (`{name, sha256}`), `precision` (`segTolMs`, `gpsHz`), `derivedFrom` (desde 1.2) y `meta` (cadenas).
+- `derivedFrom` (`{id, s, e}`, desde 1.2): el fichero es un extracto de otra salida. `id` es el `id` de la cabecera de
+  esa salida y `[s, e)` el intervalo, en ns relativos al tiempo 0 **de esa salida** (`0 <= s < e`). El tiempo 0 de este
+  fichero es el inicio del extracto (su `utc` es el de origen más `s`) y el fichero tiene su propio `id`. Sirve, por
+  ejemplo, para exportar una vuelta o varias seguidas. Un lector que lo encuentra mal formado lo ignora sin rechazar el
+  fichero.
 - **Canal**: `id`, `unit`, opcionales `src` y `hz`. Con `hz` es **regular** (finito, > 0, ≤ 1e9); sin `hz` es **explícito**.
 - **Bloque**: `ch`, `t0`, `v` (números; `null` = muestra sin valor; NaN se escribe como `null`). Regular: la muestra
   *i* está en `t0 + round(i·1e9/hz)` (cociente en doble IEEE-754 `(i×1e9)/hz`, redondeo hacia fuera en .5) y no lleva `t`. Explícito: `t` obligatorio, misma longitud que `v`,

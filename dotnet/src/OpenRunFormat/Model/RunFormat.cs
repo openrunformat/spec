@@ -4,5 +4,5 @@ namespace OpenRunFormat;
 public static class RunFormat
 {
     /// <summary>Specification version written to the header's <c>orf</c> field.</summary>
-    public const string Version = "1.1";
+    public const string Version = "1.2";
 }

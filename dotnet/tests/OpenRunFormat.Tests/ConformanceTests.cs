@@ -13,7 +13,10 @@ public class ConformanceTests
 
     public static IEnumerable<TheoryDataRow<string>> ValidFiles() => Files("valid", f => f.Contains(".runlog"));
     public static IEnumerable<TheoryDataRow<string>> InvalidFiles() => Files("invalid", f => f.Contains(".runlog"));
-    public static IEnumerable<TheoryDataRow<string>> ValidJsonlFiles() => Files("valid", f => f.EndsWith(".runlog.jsonl"));
+    // Files named "*-malformed-ignored" test that a reader ignores a malformed optional field: they are valid for a reader
+    // but are not what a writer may produce, so they are not checked against the schema.
+    public static IEnumerable<TheoryDataRow<string>> ValidJsonlFiles() =>
+        Files("valid", f => f.EndsWith(".runlog.jsonl") && !f.Contains("-malformed-ignored"));
 
     private static IEnumerable<TheoryDataRow<string>> Files(string dir, Func<string, bool> filter)
     {
@@ -68,6 +71,17 @@ public class ConformanceTests
             Assert.Equal(end.GetProperty("n").GetInt64(), doc.End.Samples);
         }
         else Assert.Null(doc.End);
+        if (expected.TryGetProperty("derivedFrom", out var df))
+        {
+            if (df.ValueKind == JsonValueKind.Null) Assert.Null(doc.Header.DerivedFrom);
+            else
+            {
+                Assert.NotNull(doc.Header.DerivedFrom);
+                Assert.Equal(df.GetProperty("id").GetString(), doc.Header.DerivedFrom!.Id);
+                Assert.Equal(df.GetProperty("s").GetInt64(), doc.Header.DerivedFrom.S);
+                Assert.Equal(df.GetProperty("e").GetInt64(), doc.Header.DerivedFrom.E);
+            }
+        }
         if (expected.TryGetProperty("course", out var ec))
         {
             Assert.NotNull(doc.Course);
@@ -138,6 +152,8 @@ public class ConformanceTests
 
     [Theory]
     [InlineData("""{"k":"h","orf":"1.0","utc":0,"id":"x","kind":"imaginary"}""")]
+    [InlineData("""{"k":"h","orf":"1.2","utc":0,"id":"x","kind":"real","derivedFrom":{"id":"","s":0,"e":1}}""")]
+    [InlineData("""{"k":"h","orf":"1.2","utc":0,"id":"x","kind":"real","derivedFrom":{"id":"a","s":0}}""")]
     [InlineData("""{"k":"d","ch":"speed","t0":0}""")]
     [InlineData("""{"k":"ch","id":"speed","unit":"m/s","hz":0}""")]
     [InlineData("""{"k":"seg","kind":"lap","s":0,"e":1}""")]

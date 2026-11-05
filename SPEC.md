@@ -1,6 +1,6 @@
-# Open Run Format (ORF) 1.1 — draft
+# Open Run Format (ORF) 1.2 — draft
 
-File extension: `.runlog`. Companion file: `.runmeta`. Specification version: `1.1` (draft, see `CHANGELOG.md`).
+File extension: `.runlog`. Companion file: `.runmeta`. Specification version: `1.2` (draft, see `CHANGELOG.md`).
 
 The key words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119.
 
@@ -86,10 +86,18 @@ Field tables use these markers: **R** required, O optional. Numbers listed as `n
 | `writer` | object | O | `{ "id": string, "version": string }`: the program that wrote the file |
 | `sourceFiles` | array | O | Originals the file was made from: objects `{ "name": string, "sha256": string }`. Absent or empty if the `.runlog` is itself the original |
 | `precision` | object | O | `{ "segTolMs": number, "gpsHz": number }`: declared tolerance of segment times (ms) and real position-fix rate (Hz). Both optional |
+| `derivedFrom` | object | O | `{ "id": string, "s": ns, "e": ns }`: the file is an excerpt of another run (added in 1.2, see below) |
 | `meta` | object | O | Free dictionary, string keys and **string** values |
 
 `converter.version` is the version of the converting module and is unrelated to `orf`; it exists so that tools can
 decide when a file should be converted again.
+
+`derivedFrom` (added in 1.2) says the file holds an interval cut from another run: `id` is the header `id` of that run
+(non-empty) and `[s, e)` is the interval, in nanoseconds relative to time 0 of **that** run, with `0 <= s < e`. Time 0 of
+this file is the start of the excerpt, so its `utc` is the source `utc` plus `s`. The file has its own `id`. A writer
+uses it, for example, when it exports a single lap or several consecutive laps; other uses (a composition of pieces of
+several runs) may extend it in later versions. A reader that finds `derivedFrom` malformed (not an object, missing or
+wrongly typed fields, empty `id`, `s < 0` or `e <= s`) ignores the field without rejecting the file.
 
 ### 3.2 Channel — `k: "ch"`
 
@@ -365,8 +373,8 @@ person. `name` is personal data: writers SHOULD only include it with the user's 
 The directory `conformance/` contains synthetic files that every implementation can use:
 
 - `conformance/valid/<name>.runlog[.jsonl]` with `<name>.expected.json`:
-  `{"complete": bool, "trailingContent": bool (optional, default false), "channels": {"<id>": <number of samples>}, "segments": n, "kind": "real|sim|synthetic"}`. A reader
-  MUST accept the file and produce those values.
+  `{"complete": bool, "trailingContent": bool (optional, default false), "channels": {"<id>": <number of samples>}, "segments": n, "kind": "real|sim|synthetic", "derivedFrom": {"id", "s", "e"} | null (optional)}`. A reader
+  MUST accept the file and produce those values (`"derivedFrom": null` means the reader reports no `derivedFrom`).
 - `conformance/invalid/*`: a reader MUST reject each file.
 - `conformance/runmeta/valid/<name>.runmeta` with `<name>.expected.json` `{"drivers": n}`: a reader MUST accept the
   file and produce that number of drivers (an ignored `drivers` field counts as 0).

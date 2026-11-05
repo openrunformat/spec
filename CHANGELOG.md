@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0 — specification 1.2 (draft), derivedFrom
+
+- Spec: the header gains the optional `derivedFrom` (`{id, s, e}`, section 3.1): the file is an excerpt of run `id`,
+  interval `[s, e)` in nanoseconds relative to time 0 of that run. A reader ignores a malformed value without rejecting
+  the file. `expected.json` accepts `derivedFrom` (section 9).
+- Schema: `derivedFrom` in `runlog.schema.json`.
+- Library: `DerivedFrom` and `RunHeader.DerivedFrom` (optional last parameter, null when absent or malformed); the writer
+  emits it after `precision` and rejects an empty `id` or `e <= s`; the writer emits `orf` 1.2.
+- Conformance: `derived-from` and `derived-from-malformed-ignored` in `conformance/valid/`.
+
 ## 0.3.0 — specification 1.1 (draft), drivers
 
 - Spec: the companion file `.runmeta` gains `drivers` (section 8): non-overlapping, half-open intervals with `id`,

@@ -57,6 +57,15 @@
           "type": "object",
           "properties": { "segTolMs": { "type": "number" }, "gpsHz": { "type": "number" } }
         },
+        "derivedFrom": {
+          "type": "object",
+          "required": ["id", "s", "e"],
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "s": { "$ref": "#/$defs/ns" },
+            "e": { "$ref": "#/$defs/ns" }
+          }
+        },
         "meta": { "type": "object", "additionalProperties": { "type": "string" } }
       }
     },
