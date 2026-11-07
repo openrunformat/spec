@@ -22,7 +22,9 @@
   `RunSetupFile.Write`/`Serialize` rename every setup and parameter key whose base key does not start with `x-` to
   `x-legacy-<key>` (suffixes kept) and never convert values.
 - Conformance: `setup-1-3` and `parameters-malformed-entry-ignored` in `conformance/runmeta/valid/`, checked against the
-  schema; `conformance/runsetup/valid/` and `conformance/runsetup/invalid/`.
+  schema; `conformance/runsetup/valid/` and `conformance/runsetup/invalid/` (bad version, id, name, values and appliesTo
+  among others); `conformance/compose/`, cases of the composition rule with their expected parameters, positions,
+  damper ways and warnings.
 
 ## 0.4.0 — specification 1.2 (draft), derivedFrom
 

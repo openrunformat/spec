@@ -1,0 +1,11 @@
+{
+  "orf": "1.3",
+  "kind": "modification",
+  "id": "mod-fixed-dampers",
+  "version": 1,
+  "name": { "en": "Fixed dampers" },
+  "operations": [
+    { "op": "add", "key": "damper_stiffness" },
+    { "op": "damperWays", "ways": { "front": 0, "rear": 0 } }
+  ]
+}

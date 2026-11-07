@@ -209,6 +209,10 @@ esquemas JSON pueden ser más estrictos.
 cuenta 0), de descripciones de parámetros y de claves del primer intervalo de `setup`.
 `conformance/runsetup/valid/<nombre>.runsetup` con `<nombre>.expected.json` `{"kind", "parameters": n, "values": n,
 "operations": n (opcional)}` debe leerse y cumplir el esquema; `conformance/runsetup/invalid` debe rechazarse.
+`conformance/compose/<caso>/` tiene `base.runsetup`, las modificaciones `mod-1.runsetup`, `mod-2.runsetup`... (en ese
+orden) y `expected.json` `{"parameters": [{"key", "positions": [...] | null}...], "damperWays": {front, rear},
+"warnings": n}`: una implementación de la composición DEBE producir esos parámetros en ese orden con esas posiciones
+(`null` = todo su ámbito), esas vías finales y ese número de avisos.
 `conformance/circuit-ids.json` lista ids y URI válidos e inválidos; `expected.json` puede llevar un bloque `course`.
 Esquemas JSON en `schema/` (un registro por línea). Un campo opcional con tipo JSON incorrecto (p. ej. un valor de `meta`
 que no es cadena) invalida el fichero.

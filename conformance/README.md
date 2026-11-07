@@ -15,6 +15,9 @@ Files a reader of Open Run Format can test itself against.
   `*.expected.json` gives the `kind` and the number of `parameters`, `values` (0 when absent) and, when present,
   `operations` a reader must report (SPEC §11).
 - `runsetup/invalid/`: each `*.runsetup` must be rejected (SPEC §11.3).
+- `compose/<case>/`: `base.runsetup` composed with `mod-1.runsetup`, `mod-2.runsetup`... in that order must give the
+  parameters (in order, with their positions; `null` means all of the scope), the final damper ways and the number of
+  warnings of `expected.json` (SPEC §9 and §11.5). Every file matches `schema/runsetup.schema.json`.
 - `circuit-ids.json`: valid and invalid circuit identifiers (SPEC §10).
 
 All the data in these files is invented: coordinates around 40.0, -3.0, round timestamps and made-up device names. Some

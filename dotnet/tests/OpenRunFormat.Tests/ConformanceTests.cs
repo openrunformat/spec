@@ -167,6 +167,49 @@ public class ConformanceTests
         Assert.Throws<FormatException>(() => RunSetupFile.Read(path));
     }
 
+    public static IEnumerable<TheoryDataRow<string>> ComposeCases()
+    {
+        var path = Path.Combine(Root, "compose");
+        IEnumerable<string> cases = Directory.Exists(path)
+            ? Directory.GetDirectories(path).Select(d => Path.GetFileName(d)).OrderBy(d => d, StringComparer.Ordinal)
+            : [];
+        var any = false;
+        foreach (var c in cases) { any = true; yield return new TheoryDataRow<string>(c); }
+        if (!any) yield return new TheoryDataRow<string>("<no conformance files found>");
+    }
+
+    // base.runsetup composed with mod-1.runsetup, mod-2.runsetup... in order gives expected.json (SPEC §9, §11.5).
+    [Theory]
+    [MemberData(nameof(ComposeCases))]
+    public void Composicion_cumple_expected(string name)
+    {
+        var dir = Path.Combine(Root, "compose", name);
+        var mods = Enumerable.Range(1, int.MaxValue - 1)
+            .Select(i => Path.Combine(dir, $"mod-{i}.runsetup"))
+            .TakeWhile(File.Exists)
+            .ToList();
+        Assert.NotEmpty(mods);
+        foreach (var f in mods.Prepend(Path.Combine(dir, "base.runsetup")))
+        {
+            using var json = JsonDocument.Parse(File.ReadAllText(f));
+            Assert.True(RunsetupSchema.Value.Evaluate(json.RootElement).IsValid, $"{name}/{Path.GetFileName(f)} does not match the schema.");
+        }
+        var expected = JsonDocument.Parse(File.ReadAllText(Path.Combine(dir, "expected.json"))).RootElement;
+
+        var composed = RunSetupComposer.Compose(RunSetupFile.Read(Path.Combine(dir, "base.runsetup")), mods.Select(RunSetupFile.Read));
+
+        var exp = expected.GetProperty("parameters").EnumerateArray().Select(p =>
+            (p.GetProperty("key").GetString()!,
+             p.GetProperty("positions").ValueKind == JsonValueKind.Null
+                ? null
+                : string.Join(",", p.GetProperty("positions").EnumerateArray().Select(x => x.GetString())))).ToList();
+        var got = composed.Parameters.Select(p => (p.Key, p.Positions is null ? null : string.Join(",", p.Positions))).ToList();
+        Assert.Equal(exp, got);
+        var ways = expected.GetProperty("damperWays");
+        Assert.Equal(new DamperWays(ways.GetProperty("front").GetInt32(), ways.GetProperty("rear").GetInt32()), composed.DamperWays);
+        Assert.Equal(expected.GetProperty("warnings").GetInt32(), composed.Warnings.Count);
+    }
+
     [Theory]
     [InlineData("""{"orf":"1.3","kind":"template","name":{"en":"A"}}""")]
     [InlineData("""{"orf":"1.3","kind":"setup","name":{"en":"A"}}""")]

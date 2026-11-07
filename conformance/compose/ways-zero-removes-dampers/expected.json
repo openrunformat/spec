@@ -1,0 +1,9 @@
+{
+  "parameters": [
+    { "key": "ride_height", "positions": null },
+    { "key": "damper_click_reference", "positions": null },
+    { "key": "tyres", "positions": null }
+  ],
+  "damperWays": { "front": 0, "rear": 0 },
+  "warnings": 0
+}

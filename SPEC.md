@@ -497,6 +497,11 @@ The directory `conformance/` contains synthetic files that every implementation 
   accept the file and produce that kind and those numbers of `parameters` entries, `values` (0 when absent) and
   `operations`. Each file matches `schema/runsetup.schema.json`.
 - `conformance/runsetup/invalid/*.runsetup`: a reader MUST reject each file (section 11.3).
+- `conformance/compose/<case>/`: a `base.runsetup` template, modifications `mod-1.runsetup`, `mod-2.runsetup`... applied
+  in that order, and `expected.json` `{"parameters": [{"key": string, "positions": [string...] | null}...], "damperWays":
+  {"front": n, "rear": n}, "warnings": n}`. An implementation of the composition (section 11.5) MUST produce those
+  parameters in that order, each with those positions (`null` when all of its scope applies), those final damper ways
+  and that number of warnings. Every file matches `schema/runsetup.schema.json`.
 - `conformance/circuit-ids.json`: lists of valid and invalid circuit identifiers (section 10) and of valid and invalid
   `orf:circuit/` URIs. For each valid entry it gives the circuit part, the variant (or `null`) and whether the id is
   provisional. An implementation of the grammar MUST accept every valid entry with those parts and reject every

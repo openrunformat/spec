@@ -1,0 +1,18 @@
+{
+  "parameters": [
+    { "key": "tyre_pressure_cold", "positions": null },
+    { "key": "tyre_pressure_hot", "positions": null },
+    { "key": "camber", "positions": null },
+    { "key": "toe", "positions": null },
+    { "key": "tyres", "positions": null },
+    { "key": "fuel_mass", "positions": null },
+    { "key": "x-note", "positions": null },
+    { "key": "ride_height", "positions": null },
+    { "key": "spring_rate", "positions": null },
+    { "key": "damper_click_reference", "positions": null },
+    { "key": "damper_bump", "positions": ["fl", "fr", "rl", "rr"] },
+    { "key": "damper_rebound", "positions": ["fl", "fr", "rl", "rr"] }
+  ],
+  "damperWays": { "front": 2, "rear": 2 },
+  "warnings": 0
+}
