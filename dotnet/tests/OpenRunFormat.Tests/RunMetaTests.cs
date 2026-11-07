@@ -251,7 +251,15 @@ public class RunMetaTests : IDisposable
         RunMetaFile.Write(path, WithValues("1.2", new()
         {
             ["camber.fl"] = "-2", ["tyres"] = "Example", ["tyres.ref"] = "tyre:example", ["x-foo"] = "a", ["my_key"] = "b",
-        }));
+            ["front_pressure"] = "2.1", ["anti_roll_bar.f"] = "3",
+        }) with
+        {
+            Parameters = new Dictionary<string, ParameterDescription>
+            {
+                ["anti_roll_bar"] = new(new Dictionary<string, string> { ["en"] = "ARB" }, "integer", SetupScope.Axle),
+                ["x-foo"] = new(new Dictionary<string, string> { ["en"] = "Foo" }, "text", SetupScope.Single),
+            },
+        });
 
         var read = RunMetaFile.Read(path);
 
@@ -260,9 +268,11 @@ public class RunMetaTests : IDisposable
             new Dictionary<string, string>
             {
                 ["x-legacy-camber.fl"] = "-2", ["x-legacy-tyres"] = "Example", ["x-legacy-tyres.ref"] = "tyre:example",
-                ["x-foo"] = "a", ["my_key"] = "b",
+                ["x-foo"] = "a", ["x-legacy-my_key"] = "b", ["x-legacy-front_pressure"] = "2.1",
+                ["x-legacy-anti_roll_bar.f"] = "3",
             },
             read.Setup[0].Values);
+        Assert.Equal(["x-foo", "x-legacy-anti_roll_bar"], read.Parameters.Keys.Order(StringComparer.Ordinal));
     }
 
     [Fact]

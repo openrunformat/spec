@@ -103,9 +103,10 @@ personal: los escritores DEBERÍAN incluirlo solo con el consentimiento del usua
 Vocabulario de `setup` (1.3, SPEC §8.1): **solo rige si `orf` es 1.3 o posterior**. En un fichero 1.0–1.2 todas las
 claves de `setup` son texto libre y NO DEBEN reinterpretarse (un `camber` de un fichero 1.2 no son radianes ni se
 convierte). Un escritor que reescribe un fichero con `orf` anterior a 1.3 DEBE, antes de escribirlo como 1.3 o
-posterior, o bien convertir al vocabulario las claves cuyo significado conoce, o bien renombrar toda clave que choque con
-el vocabulario a `x-legacy-<clave>`, conservando el sufijo de posición y la compañera `.ref` (`camber.fl` pasa a
-`x-legacy-camber.fl`); la biblioteca de referencia renombra y nunca convierte. Una clave es una clave base con sufijo de posición opcional: por rueda `.fl`, `.fr`, `.rl`, `.rr`; por eje
+posterior, convertir al vocabulario las claves cuyo significado conoce y renombrar **toda otra clave cuya clave base no
+empiece por `x-`** (choque o no con el vocabulario) a `x-legacy-<clave>`, conservando el sufijo de posición y la
+compañera `.ref` (`camber.fl` pasa a `x-legacy-camber.fl` y `front_pressure` a `x-legacy-front_pressure`); las claves
+`x-` se conservan. La biblioteca de referencia no convierte nada: renombra toda clave base que no empiece por `x-`. Una clave es una clave base con sufijo de posición opcional: por rueda `.fl`, `.fr`, `.rl`, `.rr`; por eje
 `.f`, `.r`; sin sufijo si el valor es único. La clave compañera `<clave>.ref` vale `<catálogo>:<id>` y solo enlaza a
 catálogos **públicos**, nunca a ids de unidades privadas ni de bibliotecas locales. Una clave fuera del vocabulario DEBE
 empezar por `x-`, y un escritor NO DEBE usar una clave estándar con otro significado, unidad o ámbito. Los valores son siempre

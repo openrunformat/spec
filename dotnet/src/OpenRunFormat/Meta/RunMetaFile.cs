@@ -22,7 +22,7 @@ public static class RunMetaFile
 
     /// <summary>
 /// Writes the companion. <c>Orf</c> is forced to <see cref="RunFormat.Version"/>; when the companion is older than 1.3,
-/// setup keys (and parameter keys) that collide with the standard vocabulary are written as <c>x-legacy-&lt;key&gt;</c>
+/// every setup key (and parameter key) whose base key does not start with <c>x-</c> is written as <c>x-legacy-&lt;key&gt;</c>
 /// (specification §8.1), without converting values. The write is atomic: a temporary
 /// file in the same directory is flushed to disk and moved over the target; on failure an existing target is untouched.
 /// </summary>

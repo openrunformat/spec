@@ -376,10 +376,12 @@ person. `name` is personal data: writers SHOULD only include it with the user's 
 The standard vocabulary governs the keys of `setup` values **only in files whose `orf` is 1.3 or later** (same major).
 In a file with `orf` 1.0, 1.1 or 1.2 every `setup` key is free text, even one that looks like a standard key: a reader
 MUST NOT reinterpret it (for example, `camber` in a 1.2 file is not an angle in radians, and its value is not converted).
-A writer that rewrites a file whose `orf` is below 1.3 MUST, before writing it as 1.3 or later, either convert to the
-vocabulary the keys whose meaning it knows, or rename every key that collides with the vocabulary to `x-legacy-<key>`
-(keeping the position suffix and the `.ref` companion: for example `camber.fl` becomes `x-legacy-camber.fl` and
-`tyres.ref` becomes `x-legacy-tyres.ref`). The reference library renames and never converts.
+A writer that rewrites a file whose `orf` is below 1.3 MUST, before writing it as 1.3 or later, convert to the
+vocabulary the keys whose meaning it knows and rename **every other key whose base key does not start with `x-`**,
+whether it collides with the vocabulary or not, to `x-legacy-<key>`, keeping the position suffix and the `.ref`
+companion: for example `camber.fl` becomes `x-legacy-camber.fl`, `tyres.ref` becomes `x-legacy-tyres.ref` and
+`front_pressure` becomes `x-legacy-front_pressure`. Keys that already start with `x-` are kept. The reference library
+converts nothing: it renames every key whose base key does not start with `x-`.
 The same rules apply to the `values` of a `.runsetup` file (section 11).
 
 **Keys.** A key is a base key, optionally followed by a position suffix:

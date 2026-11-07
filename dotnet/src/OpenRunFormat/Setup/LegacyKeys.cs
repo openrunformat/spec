@@ -4,7 +4,7 @@ namespace OpenRunFormat.Setup;
 
 /// <summary>
 /// Rewriting of files older than specification 1.3, whose setup keys are free text: before such a file is written as
-/// 1.3 or later, every key that collides with the standard vocabulary becomes <c>x-legacy-&lt;key&gt;</c>, keeping its
+/// 1.3 or later, every key whose base key does not start with <c>x-</c> becomes <c>x-legacy-&lt;key&gt;</c>, keeping its
 /// position suffix and <c>.ref</c> companion. Values are never converted.
 /// </summary>
 internal static class LegacyKeys
@@ -22,9 +22,12 @@ internal static class LegacyKeys
             && major == 1 && minor < 3;
     }
 
-    /// <summary><c>camber.fl</c> becomes <c>x-legacy-camber.fl</c>; a key outside the vocabulary is returned as is.</summary>
+    /// <summary>
+    /// <c>camber.fl</c> and <c>front_pressure</c> become <c>x-legacy-camber.fl</c> and <c>x-legacy-front_pressure</c>; a
+    /// key whose base key starts with <c>x-</c> is returned as is.
+    /// </summary>
     public static string Rename(string key) =>
-        SetupVocabulary.IsStandard(SetupVocabulary.BaseKeyOf(key)) ? Prefix + key : key;
+        SetupVocabulary.IsCustom(SetupVocabulary.BaseKeyOf(key)) ? key : Prefix + key;
 
     public static IReadOnlyDictionary<string, string> Rename(IReadOnlyDictionary<string, string> values)
     {
@@ -34,19 +37,18 @@ internal static class LegacyKeys
     }
 
     /// <summary>
-    /// Renames a parameter key. A colliding key without description (a standard key used with its standard definition)
-    /// gets a <c>text</c> description named after the original key, with the scope and positions of the standard key,
-    /// because a non-standard key needs a description and the old value was free text.
+    /// Renames a parameter key. A renamed key without description gets a <c>text</c> description named after the
+    /// original key, because a non-standard key needs a description and the old value was free text: with the scope and
+    /// positions of the standard key when the base key is in the vocabulary, otherwise with scope <c>single</c>.
     /// </summary>
     public static KeyValuePair<string, ParameterDescription?> Rename(KeyValuePair<string, ParameterDescription?> parameter)
     {
         var renamed = Rename(parameter.Key);
         if (renamed == parameter.Key) return parameter;
         if (parameter.Value is { } d) return new(renamed, d);
-        var standard = SetupVocabulary.Standard[parameter.Key];
-        return new(renamed, new ParameterDescription(new Dictionary<string, string> { ["en"] = parameter.Key }, "text", standard.Scope)
-        {
-            Positions = standard.Positions,
-        });
+        var name = new Dictionary<string, string> { ["en"] = parameter.Key };
+        return SetupVocabulary.Standard.TryGetValue(SetupVocabulary.BaseKeyOf(parameter.Key), out var standard)
+            ? new(renamed, new ParameterDescription(name, "text", standard.Scope) { Positions = standard.Positions })
+            : new(renamed, new ParameterDescription(name, "text", SetupScope.Single));
     }
 }

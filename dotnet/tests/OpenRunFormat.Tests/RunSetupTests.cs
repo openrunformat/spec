@@ -247,10 +247,13 @@ public class RunSetupTests : IDisposable
                 new(SetupKeys.Camber, null),
                 new(SetupKeys.Tyres, new ParameterDescription(En("Tyres"), "text", SetupScope.Single)),
                 new("x-foo", new ParameterDescription(En("Foo"), "text", SetupScope.Single)),
+                new("front_pressure", null),
+                new("anti_roll_bar", new ParameterDescription(En("ARB"), "integer", SetupScope.Axle)),
             ],
             Values = new Dictionary<string, string>
             {
                 ["camber.fl"] = "-2", ["tyres"] = "Example", ["tyres.ref"] = "tyre:example", ["x-foo"] = "a", ["my_key"] = "b",
+                ["front_pressure"] = "2.1", ["anti_roll_bar.f"] = "3",
             },
         };
         var path = Path.Combine(_dir, "old.runsetup");
@@ -263,12 +266,21 @@ public class RunSetupTests : IDisposable
             new Dictionary<string, string>
             {
                 ["x-legacy-camber.fl"] = "-2", ["x-legacy-tyres"] = "Example", ["x-legacy-tyres.ref"] = "tyre:example",
-                ["x-foo"] = "a", ["my_key"] = "b",
+                ["x-foo"] = "a", ["x-legacy-my_key"] = "b", ["x-legacy-front_pressure"] = "2.1",
+                ["x-legacy-anti_roll_bar.f"] = "3",
             },
             read.Values);
-        Assert.Equal(["x-legacy-camber", "x-legacy-tyres", "x-foo"], read.Parameters.Select(p => p.Key));
+        Assert.Equal(
+            ["x-legacy-camber", "x-legacy-tyres", "x-foo", "x-legacy-front_pressure", "x-legacy-anti_roll_bar"],
+            read.Parameters.Select(p => p.Key));
         Assert.Equal(SetupScope.Wheel, read.Parameters[0].Value!.Scope);
         Assert.Equal("Tyres", read.Parameters[1].Value!.Name["en"]);
+        // A free key without description gets a single-valued text description named after the key.
+        Assert.Equal("text", read.Parameters[3].Value!.Type);
+        Assert.Equal(SetupScope.Single, read.Parameters[3].Value!.Scope);
+        Assert.Null(read.Parameters[3].Value!.Positions);
+        Assert.Equal("front_pressure", read.Parameters[3].Value!.Name["en"]);
+        Assert.Equal(SetupScope.Axle, read.Parameters[4].Value!.Scope);
     }
 
     [Fact]
