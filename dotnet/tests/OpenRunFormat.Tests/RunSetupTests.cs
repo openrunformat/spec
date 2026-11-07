@@ -375,6 +375,32 @@ public class RunSetupTests : IDisposable
         Assert.Equal(RunFormat.Version, RunSetupFile.Parse(RunSetupFile.Serialize(future with { Orf = "2.1" })).Orf);
     }
 
+    public static TheoryData<string> Rechazables() => ["sin-id", "sin-version", "version-cero", "id-vacio", "mod-sin-id", "setup-sin-values", "sin-nombre", "applies-to-vacio"];
+
+    [Theory]
+    [MemberData(nameof(Rechazables))]
+    public void Write_rechaza_lo_que_su_lector_rechazaria(string caso)
+    {
+        var template = new RunSetup(RunFormat.Version, RunSetupKind.Template, En("T")) { Id = "t", Version = 1 };
+        var bad = caso switch
+        {
+            "sin-id" => template with { Id = null },
+            "sin-version" => template with { Version = null },
+            "version-cero" => template with { Version = 0 },
+            "id-vacio" => template with { Id = "" },
+            "mod-sin-id" => template with { Kind = RunSetupKind.Modification, Id = null },
+            "setup-sin-values" => new RunSetup(RunFormat.Version, RunSetupKind.Setup, En("S")),
+            "sin-nombre" => template with { Name = new Dictionary<string, string>() },
+            _ => template with { AppliesTo = [""] },
+        };
+        var path = Path.Combine(_dir, "bad.runsetup");
+
+        Assert.Throws<ArgumentException>(() => RunSetupFile.Serialize(bad));
+        Assert.Throws<ArgumentException>(() => RunSetupFile.Write(path, bad));
+        Assert.False(File.Exists(path));
+        RunSetupFile.Serialize(template);
+    }
+
     [Fact]
     public void Write_fuerza_orf_actual()
     {

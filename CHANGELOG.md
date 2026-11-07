@@ -15,7 +15,8 @@
   new (section 9).
 - Schema: `parameters` in `runmeta.schema.json`; new `runsetup.schema.json`.
 - Library: `OpenRunFormat.Setup` with `SetupKeys` and `SetupVocabulary` (`Applies`, `BaseKeyOf`, `PositionOf`,
-  `KeysFor`, `DamperKeys`), `ParameterDescription`, `RunMeta.Parameters`, `RunSetup` and `RunSetupFile` (atomic write)
+  `KeysFor`, `DamperKeys`), `ParameterDescription`, `RunMeta.Parameters`, `RunSetup` and `RunSetupFile` (atomic write; `Write`/`Serialize` throw `ArgumentException` for an object its reader
+  would reject)
   and `RunSetupComposer` (positions of standard keys without description come from the vocabulary); the writers emit `orf` 1.3, or the object's `orf` when it is a later 1.y. When the object is older than 1.3, `RunMetaFile.Write` and
   `RunSetupFile.Write`/`Serialize` rename every setup and parameter key whose base key does not start with `x-` to
   `x-legacy-<key>` (suffixes kept) and never convert values.

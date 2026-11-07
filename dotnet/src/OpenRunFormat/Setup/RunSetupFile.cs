@@ -27,6 +27,11 @@ public static class RunSetupFile
     /// <c>x-legacy-&lt;key&gt;</c> (specification §8.1), without converting values. The write is atomic: a temporary file in
     /// the same directory is flushed to disk and moved over the target; on failure an existing target is untouched.
     /// </summary>
+    /// <exception cref="ArgumentException">
+    /// The object would be rejected by a reader: a template or modification without <c>id</c> or <c>version</c>, an empty
+    /// <c>id</c>, a <c>version</c> below 1, a setup without <c>values</c>, a <c>name</c> without any language or an empty
+    /// <c>appliesTo</c> entry.
+    /// </exception>
     public static void Write(string path, RunSetup setup)
     {
         ArgumentNullException.ThrowIfNull(path);
@@ -36,14 +41,28 @@ public static class RunSetupFile
     }
 
     /// <summary>The JSON text of a file, with <c>orf</c> and keys as in <see cref="Write"/>.</summary>
+    /// <exception cref="ArgumentException">As in <see cref="Write"/>.</exception>
     public static string Serialize(RunSetup setup)
     {
         ArgumentNullException.ThrowIfNull(setup);
         return Encoding.UTF8.GetString(SerializeToUtf8(setup));
     }
 
+    // Throws for an object that the reader of this library would reject (specification §11.3).
+    private static void Validate(RunSetup s)
+    {
+        if (s.Name.Count == 0) throw new ArgumentException("'name' needs at least one language.", nameof(s));
+        if (s.Id is { Length: 0 }) throw new ArgumentException("'id' must not be empty.", nameof(s));
+        if (s.Version is < 1) throw new ArgumentException("'version' must be a positive integer.", nameof(s));
+        if (s.Kind != RunSetupKind.Setup && (s.Id is null || s.Version is null))
+            throw new ArgumentException("A template or modification needs 'id' and 'version'.", nameof(s));
+        if (s.Kind == RunSetupKind.Setup && s.Values is null) throw new ArgumentException("A setup needs 'values'.", nameof(s));
+        if (s.AppliesTo.Any(string.IsNullOrEmpty)) throw new ArgumentException("'appliesTo' must hold non-empty strings.", nameof(s));
+    }
+
     private static byte[] SerializeToUtf8(RunSetup s)
     {
+        Validate(s);
         if (LegacyKeys.NeedsRename(s.Orf))
             s = s with
             {
