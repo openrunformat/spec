@@ -1,5 +1,6 @@
 using System.Text;
 using OpenRunFormat.Meta;
+using OpenRunFormat.Setup;
 
 namespace OpenRunFormat.Tests;
 
@@ -238,5 +239,123 @@ public class RunMetaTests : IDisposable
 
         var future = WriteRaw(_dir, RawWithDrivers("1.7", "[]"));
         Assert.Equal("1.7", RunMetaFile.Read(future).Orf);
+    }
+
+    private static string RawWithParameters(string parametersJson) =>
+        $$"""{"orf":"1.3","id":"run-1","runlogSha256":"00","parameters":{{parametersJson}}}""";
+
+    [Fact]
+    public void Parameters_ida_y_vuelta()
+    {
+        var path = Path.Combine(_dir, "par.runmeta");
+        var full = new ParameterDescription(
+            new Dictionary<string, string> { ["en"] = "Stiffness", ["es"] = "Rigidez" }, "decimal", SetupScope.Axle)
+        {
+            Unit = "N/m",
+            CatalogKind = "part",
+            Min = 0.5,
+            Max = 4.25,
+            Precision = 2,
+            Group = ParameterGroups.Suspension,
+            Personal = true,
+            Positions = ["f", "r"],
+            ClickReference = "from_hard",
+        };
+        var choice = new ParameterDescription(
+            new Dictionary<string, string> { ["en"] = "Drive mode" }, "choice", SetupScope.Single)
+        {
+            Choices = [new ParameterChoice("sport", new Dictionary<string, string> { ["en"] = "Sport" }),
+                       new ParameterChoice("rain", new Dictionary<string, string> { ["en"] = "Rain", ["es"] = "Lluvia" })],
+            AllowOther = true,
+        };
+        var minimal = new ParameterDescription(new Dictionary<string, string> { ["en"] = "Note" }, "text", SetupScope.Wheel);
+        var meta = Sample() with { Parameters = new Dictionary<string, ParameterDescription> { ["x-stiff"] = full, ["x-drive-mode"] = choice, ["x-note"] = minimal } };
+        RunMetaFile.Write(path, meta);
+
+        var read = RunMetaFile.Read(path).Parameters;
+
+        Assert.Equal(3, read.Count);
+        var f = read["x-stiff"];
+        Assert.Equal(full.Name, f.Name);
+        Assert.Equal("decimal", f.Type);
+        Assert.Equal(SetupScope.Axle, f.Scope);
+        Assert.Equal("N/m", f.Unit);
+        Assert.Equal("part", f.CatalogKind);
+        Assert.Equal(0.5, f.Min);
+        Assert.Equal(4.25, f.Max);
+        Assert.Equal(2, f.Precision);
+        Assert.Equal("suspension", f.Group);
+        Assert.True(f.Personal);
+        Assert.Equal(["f", "r"], f.Positions);
+        Assert.Equal("from_hard", f.ClickReference);
+        var c = read["x-drive-mode"];
+        Assert.Equal(2, c.Choices.Count);
+        Assert.Equal("sport", c.Choices[0].Id);
+        Assert.Equal(choice.Choices[1].Name, c.Choices[1].Name);
+        Assert.True(c.AllowOther);
+        var m = read["x-note"];
+        Assert.Equal(minimal.Name, m.Name);
+        Assert.Equal(SetupScope.Wheel, m.Scope);
+        Assert.Null(m.Unit);
+        Assert.Empty(m.Choices);
+        Assert.False(m.AllowOther);
+        Assert.Null(m.Min);
+        Assert.Null(m.Positions);
+        Assert.False(m.Personal);
+    }
+
+    [Fact]
+    public void Parameters_entrada_mal_formada_se_ignora_sola()
+    {
+        var path = WriteRaw(_dir, RawWithParameters("""
+            {
+              "a": {"name":{"en":"A"},"type":"text","scope":"single"},
+              "b": {"name":{"en":"B"},"type":"decimal","scope":"diagonal"},
+              "c": {"name":{"en":"C"},"type":"integer","scope":"axle"}
+            }
+            """));
+        var read = RunMetaFile.Read(path).Parameters;
+        Assert.Equal(2, read.Count);
+        Assert.Contains("a", read.Keys);
+        Assert.Contains("c", read.Keys);
+    }
+
+    [Theory]
+    [InlineData("""5""")]
+    [InlineData("""{"type":"text","scope":"single"}""")]
+    [InlineData("""{"name":{},"type":"text","scope":"single"}""")]
+    [InlineData("""{"name":{"en":"A"},"scope":"single"}""")]
+    [InlineData("""{"name":{"en":"A"},"type":"text"}""")]
+    [InlineData("""{"name":{"en":"A"},"type":"color","scope":"single"}""")]
+    [InlineData("""{"name":{"en":"A"},"type":"choice","scope":"single"}""")]
+    [InlineData("""{"name":{"en":"A"},"type":"decimal","scope":"single","min":5,"max":1}""")]
+    [InlineData("""{"name":{"en":"A"},"type":"decimal","scope":"single","precision":"2"}""")]
+    [InlineData("""{"name":{"en":"A"},"type":"decimal","scope":"single","unit":3}""")]
+    public void Parameters_reglas_de_entrada_mal_formada(string entry)
+    {
+        var path = WriteRaw(_dir, RawWithParameters("{\"bad\":" + entry + ",\"ok\":{\"name\":{\"en\":\"A\"},\"type\":\"text\",\"scope\":\"single\"}}"));
+        var read = RunMetaFile.Read(path).Parameters;
+        Assert.Equal(["ok"], read.Keys);
+    }
+
+    [Fact]
+    public void Sin_parameters_lee_vacio_y_no_escribe_el_campo()
+    {
+        var path = Path.Combine(_dir, "none.runmeta");
+        RunMetaFile.Write(path, Sample());
+        Assert.Empty(RunMetaFile.Read(path).Parameters);
+        Assert.DoesNotContain("\"parameters\"", File.ReadAllText(path));
+        Assert.Empty(RunMetaFile.Read(WriteRaw(_dir, """{"orf":"1.2","id":"run-1","runlogSha256":"00"}""")).Parameters);
+    }
+
+    [Fact]
+    public void Runmeta_1_2_sigue_leyendose_igual()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "conformance", "runmeta", "valid", "drivers.runmeta");
+        var meta = RunMetaFile.Read(path);
+        Assert.Equal("1.1", meta.Orf);
+        Assert.Equal(2, meta.Drivers.Count);
+        Assert.Empty(meta.Setup);
+        Assert.Empty(meta.Parameters);
     }
 }

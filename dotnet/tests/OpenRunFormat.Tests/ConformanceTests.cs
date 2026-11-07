@@ -113,7 +113,9 @@ public class ConformanceTests
 
         var meta = RunMetaFile.Read(path);
 
-        Assert.Equal(expected.GetProperty("drivers").GetInt32(), meta.Drivers.Count);
+        if (expected.TryGetProperty("drivers", out var ed)) Assert.Equal(ed.GetInt32(), meta.Drivers.Count);
+        if (expected.TryGetProperty("parameters", out var ep)) Assert.Equal(ep.GetInt32(), meta.Parameters.Count);
+        if (expected.TryGetProperty("setupKeys", out var ek)) Assert.Equal(ek.GetInt32(), meta.Setup[0].Values.Count);
     }
 
     [Theory]

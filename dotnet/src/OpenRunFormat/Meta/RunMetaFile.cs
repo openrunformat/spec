@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using OpenRunFormat.Json;
+using OpenRunFormat.Setup;
 
 namespace OpenRunFormat.Meta;
 
@@ -49,6 +50,16 @@ public static class RunMetaFile
                 w.WriteEndObject();
             }
             w.WriteEndArray();
+            if (meta.Parameters.Count > 0)
+            {
+                w.WriteStartObject("parameters");
+                foreach (var kv in meta.Parameters)
+                {
+                    w.WritePropertyName(kv.Key);
+                    ParameterJson.Write(w, kv.Value);
+                }
+                w.WriteEndObject();
+            }
             w.WriteStartArray("drivers");
             foreach (var d in meta.Drivers)
             {
@@ -128,7 +139,7 @@ public static class RunMetaFile
             var drivers = ReadDrivers(r);
 
             return new RunMeta(orf, RecordCodec.Req(r, "id").GetString()!, RecordCodec.Req(r, "runlogSha256").GetString()!,
-                vehicle, setup, notes, segments, drivers);
+                vehicle, setup, notes, segments, drivers) { Parameters = ReadParameters(r) };
         }
         catch (FormatException) { throw; }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException or OverflowException)
@@ -163,6 +174,16 @@ public static class RunMetaFile
         result.Sort((a, b) => a.S.CompareTo(b.S));
         for (var i = 1; i < result.Count; i++)
             if (result[i].S < result[i - 1].E) return [];
+        return result;
+    }
+
+    // A malformed entry is ignored on its own; the other entries and the rest of the file still read.
+    private static Dictionary<string, ParameterDescription> ReadParameters(JsonElement root)
+    {
+        var result = new Dictionary<string, ParameterDescription>();
+        if (RecordCodec.Opt(root, "parameters") is not { ValueKind: JsonValueKind.Object } obj) return result;
+        foreach (var p in obj.EnumerateObject())
+            if (p.Name.Length > 0 && ParameterJson.TryRead(p.Value) is { } d) result[p.Name] = d;
         return result;
     }
 
