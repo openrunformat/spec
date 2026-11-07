@@ -174,6 +174,10 @@ public class ConformanceTests
     [InlineData("""{"orf":"1.3","kind":"setup","name":{},"values":{}}""")]
     [InlineData("""{"orf":"1.3","kind":"setup","name":{"en":"A"},"values":{},"damperWays":{"front":5,"rear":0}}""")]
     [InlineData("""{"orf":"1.3","kind":"modification","id":"m","version":1,"name":{"en":"A"},"operations":[{"op":"rename","key":"x"}]}""")]
+    [InlineData("""{"orf":"1.3","kind":"template","id":"t","version":1,"name":{"en":"A"},"parameters":{"x-a":{}}}""")]
+    [InlineData("""{"orf":"1.3","kind":"template","id":"t","version":1,"name":{"en":"A"},"parameters":{"x-a":null}}""")]
+    [InlineData("""{"orf":"1.3","kind":"modification","id":"m","version":1,"name":{"en":"A"},"operations":[{"op":"add","key":"x-a"}]}""")]
+    [InlineData("""{"orf":"1.3","kind":"modification","id":"m","version":1,"name":{"en":"A"},"operations":[{"op":"change","key":"x-a"}]}""")]
     public void Esquema_runsetup_rechaza_ficheros_mal_formados(string text)
     {
         using var json = JsonDocument.Parse(text);

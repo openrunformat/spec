@@ -20,6 +20,7 @@
     "parameters": {
       "description": "Parameters by base key, in order. {} or null is a standard key used with its standard definition; any other key needs a description. A malformed entry is ignored by readers.",
       "type": "object",
+      "patternProperties": { "^x-": { "$ref": "#/$defs/description" } },
       "additionalProperties": {
         "anyOf": [
           { "type": "null" },
@@ -46,6 +47,13 @@
           {
             "if": { "properties": { "op": { "enum": ["add", "change", "remove"] } } },
             "then": { "required": ["key"] }
+          },
+          {
+            "if": {
+              "required": ["op", "key"],
+              "properties": { "op": { "enum": ["add", "change"] }, "key": { "type": "string", "pattern": "^x-" } }
+            },
+            "then": { "required": ["description"] }
           },
           {
             "if": { "properties": { "op": { "const": "damperWays" } } },
