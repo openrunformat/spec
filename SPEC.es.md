@@ -138,6 +138,10 @@ estándar no la necesitan). `type`: `text`, `bool`, `choice`, `integer`, `decima
 parámetro en `other` (la composición solo mira `suspension`). Un lector ignora **solo la
 entrada** mal formada (falta `name`, `type` o `scope`, tipo JSON erróneo, `choice` sin opciones, `min > max`,
 `precision` fuera de `decimal`, `clickReference` desconocido...); el resto de entradas y del fichero se lee igual.
+Una clave estándar PUEDE tener descripción, pero su `type`, `unit` y `scope` DEBEN ser los del vocabulario y los
+lectores usan los del vocabulario (si difieren, ignoran esos tres campos y conservan el resto); se respetan `name`,
+`min`/`max`, `precision` (solo si el tipo estándar es `decimal`) y `group`, y `positions` solo restringe las posiciones
+del vocabulario (las que quedan fuera se descartan). Rige donde rige el vocabulario (`orf` ≥ 1.3), también en `.runsetup`.
 
 ## Ficheros `.runsetup`
 

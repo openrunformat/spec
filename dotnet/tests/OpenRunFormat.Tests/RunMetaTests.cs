@@ -383,6 +383,18 @@ public class RunMetaTests : IDisposable
         Assert.Contains("c", read.Keys);
     }
 
+    [Fact]
+    public void Parameters_de_clave_estandar_usan_el_vocabulario()
+    {
+        var path = WriteRaw(_dir, RawWithParameters("""
+            {"camber": {"name":{"en":"Camber"},"type":"integer","unit":"deg","scope":"axle","positions":["f","fl"],"max":0}}
+            """));
+        var camber = RunMetaFile.Read(path).Parameters["camber"];
+        Assert.Equal(("decimal", "rad", SetupScope.Wheel), (camber.Type, camber.Unit, camber.Scope));
+        Assert.Equal(["fl"], camber.Positions);
+        Assert.Equal(0, camber.Max);
+    }
+
     [Theory]
     [InlineData("""5""")]
     [InlineData("""{"type":"text","scope":"single"}""")]

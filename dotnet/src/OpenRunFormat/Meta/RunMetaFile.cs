@@ -143,7 +143,7 @@ public static class RunMetaFile
             var drivers = ReadDrivers(r);
 
             return new RunMeta(orf, RecordCodec.Req(r, "id").GetString()!, RecordCodec.Req(r, "runlogSha256").GetString()!,
-                vehicle, setup, notes, segments, drivers) { Parameters = ReadParameters(r) };
+                vehicle, setup, notes, segments, drivers) { Parameters = ReadParameters(r, SetupVocabulary.Applies(orf)) };
         }
         catch (FormatException) { throw; }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException or OverflowException)
@@ -181,13 +181,15 @@ public static class RunMetaFile
         return result;
     }
 
-    // A malformed entry is ignored on its own; the other entries and the rest of the file still read.
-    private static Dictionary<string, ParameterDescription> ReadParameters(JsonElement root)
+    // A malformed entry is ignored on its own; the other entries and the rest of the file still read. Where the
+    // vocabulary governs, a description of a standard key takes the vocabulary's type, unit and scope.
+    private static Dictionary<string, ParameterDescription> ReadParameters(JsonElement root, bool vocabulary)
     {
         var result = new Dictionary<string, ParameterDescription>();
         if (RecordCodec.Opt(root, "parameters") is not { ValueKind: JsonValueKind.Object } obj) return result;
         foreach (var p in obj.EnumerateObject())
-            if (p.Name.Length > 0 && ParameterJson.TryRead(p.Value) is { } d) result[p.Name] = d;
+            if (p.Name.Length > 0 && ParameterJson.TryRead(p.Value) is { } d)
+                result[p.Name] = vocabulary ? ParameterJson.ForKey(p.Name, d) : d;
         return result;
     }
 

@@ -445,6 +445,14 @@ The list grows with minor versions; adding a key is not a breaking change.
 `parameters` maps a **base key** (without position or `.ref` suffix) to a description that tells a consumer how to show
 and edit a parameter that is not in the standard vocabulary. Keys of the standard vocabulary need no description.
 
+A key of the standard vocabulary MAY have a description (for example a translated name or limits). Its `type`, `unit`
+and `scope` MUST equal those of the vocabulary (section 8.1), and readers use the vocabulary's: a reader that finds
+different ones ignores those three fields and keeps the rest of the entry. A reader honours the other fields, such as
+`name`, `min` and `max`, `precision` (only when the standard type is `decimal`) and `group`; `positions` can only
+restrict the positions of the vocabulary, and a reader drops any position outside them (with none left, the
+vocabulary's apply). This applies wherever the vocabulary governs (`orf` 1.3 or later), also to descriptions in a
+`.runsetup` file.
+
 | Field | Type | | Meaning |
 |---|---|---|---|
 | `name` | object | R | Name per language tag (for example `{"en": "Drive mode", "es": "Modo de conducción"}`); string values, at least one |
@@ -627,10 +635,11 @@ section 8.1 governs the keys only when `orf` is 1.3 or later.
 
 `parameters` maps a base key to its description (section 8.2). A key of the standard vocabulary used with its standard
 definition has the value `{}` (readers also accept `null`); any other key needs a description, and a standard key MAY
-have one (for example a translated name or limits). For forward compatibility, a reader that finds `{}` or `null` for a
-key that does not start with `x-` and is not in the vocabulary it knows (for example a key added by a later minor
-version) keeps the parameter, as type `text` and scope `single`, named after the key. The order of the entries is the order in which a consumer shows the
-parameters and the order the composition starts from.
+have one (for example a translated name or limits), with the vocabulary's `type`, `unit` and `scope` (section 8.2).
+For forward compatibility, a reader that finds `{}` or `null` for a key that does not start with `x-` and is not in the
+vocabulary it knows (for example a key added by a later minor version) keeps the parameter, as type `text` and scope
+`single`, named after the key. The order of the entries is the order in which a consumer shows the parameters and the
+order the composition starts from.
 
 ### 11.3 Reading
 

@@ -260,10 +260,10 @@ public static class RunSetupFile
                 Version = version,
                 AppliesTo = appliesTo,
                 Vehicle = vehicle,
-                Parameters = ReadParameters(r),
+                Parameters = ReadParameters(r, SetupVocabulary.Applies(orf)),
                 Values = values,
                 DamperWays = r.TryGetProperty("damperWays", out var dwEl) ? ReadWays(dwEl) : null,
-                Operations = ReadOperations(r),
+                Operations = ReadOperations(r, SetupVocabulary.Applies(orf)),
                 Composition = r.TryGetProperty("composition", out var cEl) ? ReadComposition(cEl) : null,
                 Extensions = ReadExtensions(r),
             };
@@ -285,7 +285,7 @@ public static class RunSetupFile
     // `{}` or null is a standard key without description; anything else must be a valid description. An x- key needs a
     // description; any other key this reader does not know (added by a later minor version) is kept as single-valued
     // text. Repeated keys keep the first position and the last description.
-    private static List<KeyValuePair<string, ParameterDescription?>> ReadParameters(JsonElement root)
+    private static List<KeyValuePair<string, ParameterDescription?>> ReadParameters(JsonElement root, bool vocabulary)
     {
         var result = new List<KeyValuePair<string, ParameterDescription?>>();
         if (!root.TryGetProperty("parameters", out var obj) || obj.ValueKind != JsonValueKind.Object) return result;
@@ -299,7 +299,7 @@ public static class RunSetupFile
                 if (SetupVocabulary.IsCustom(p.Name)) continue;
                 description = SetupVocabulary.IsStandard(p.Name) ? null : UnknownKeyDescription(p.Name);
             }
-            else if (ParameterJson.TryRead(p.Value) is { } d) description = d;
+            else if (ParameterJson.TryRead(p.Value) is { } d) description = vocabulary ? ParameterJson.ForKey(p.Name, d) : d;
             else continue;
 
             var at = result.FindIndex(x => x.Key == p.Name);
@@ -309,16 +309,16 @@ public static class RunSetupFile
         return result;
     }
 
-    private static List<SetupOperation> ReadOperations(JsonElement root)
+    private static List<SetupOperation> ReadOperations(JsonElement root, bool vocabulary)
     {
         var result = new List<SetupOperation>();
         if (!root.TryGetProperty("operations", out var arr) || arr.ValueKind != JsonValueKind.Array) return result;
         foreach (var e in arr.EnumerateArray())
-            if (ReadOperation(e) is { } op) result.Add(op);
+            if (ReadOperation(e, vocabulary) is { } op) result.Add(op);
         return result;
     }
 
-    private static SetupOperation? ReadOperation(JsonElement e)
+    private static SetupOperation? ReadOperation(JsonElement e, bool vocabulary)
     {
         if (e.ValueKind != JsonValueKind.Object || !e.TryGetProperty("op", out var opEl) || opEl.ValueKind != JsonValueKind.String)
             return null;
@@ -345,6 +345,7 @@ public static class RunSetupFile
         {
             description = ParameterJson.TryRead(dEl);
             if (description is null) return null;
+            if (vocabulary) description = ParameterJson.ForKey(key, description);
         }
         if (description is null && SetupVocabulary.IsCustom(key)) return null;
         if (description is null && !SetupVocabulary.IsStandard(key)) description = UnknownKeyDescription(key);

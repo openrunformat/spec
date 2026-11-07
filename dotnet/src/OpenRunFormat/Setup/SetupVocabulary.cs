@@ -121,6 +121,14 @@ public static class SetupVocabulary
         return Array.IndexOf(WheelPositions, suffix) >= 0 || Array.IndexOf(AxlePositions, suffix) >= 0 ? suffix : null;
     }
 
+    /// <summary>Position suffixes of a scope: the four wheels, the two axles, or none.</summary>
+    internal static IReadOnlyList<string> PositionsOf(SetupScope scope) => scope switch
+    {
+        SetupScope.Wheel => WheelPositions,
+        SetupScope.Axle => AxlePositions,
+        _ => [],
+    };
+
     /// <summary>Concrete keys for a base key in a scope, optionally limited to some positions.</summary>
     public static IEnumerable<string> KeysFor(string baseKey, SetupScope scope, IReadOnlyList<string>? positions = null)
     {

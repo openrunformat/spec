@@ -238,6 +238,43 @@ public class RunSetupTests : IDisposable
     }
 
     [Fact]
+    public void Descripcion_de_clave_estandar_usa_tipo_unidad_y_ambito_del_vocabulario()
+    {
+        const string Parameters = """
+            "parameters": {
+              "camber": {"name": {"es": "Caída"}, "type": "text", "unit": "deg", "scope": "single", "min": -0.1,
+                         "group": "geometry", "positions": ["fl", "fr", "f"]},
+              "caster": {"name": {"en": "Caster"}, "type": "decimal", "scope": "wheel", "positions": ["rl"], "precision": 3},
+              "damper_bump": {"name": {"en": "Bump"}, "type": "decimal", "scope": "wheel", "precision": 1}
+            }
+            """;
+        var read = RunSetupFile.Parse($$"""{"orf":"1.3","kind":"template","id":"t","version":1,"name":{"en":"T"},{{Parameters}}}""");
+
+        var camber = read.Parameters[0].Value!;
+        Assert.Equal(("decimal", "rad", SetupScope.Wheel), (camber.Type, camber.Unit, camber.Scope));
+        Assert.Equal("Caída", camber.Name["es"]);
+        Assert.Equal(-0.1, camber.Min);
+        Assert.Equal("geometry", camber.Group);
+        Assert.Equal(["fl", "fr"], camber.Positions);
+        var caster = read.Parameters[1].Value!;
+        Assert.Equal(["fl", "fr"], caster.Positions);
+        Assert.Equal(3, caster.Precision);
+        var bump = read.Parameters[2].Value!;
+        Assert.Equal(("integer", (string?)null), (bump.Type, bump.Unit));
+        Assert.Null(bump.Precision);
+
+        var op = RunSetupFile.Parse("""
+            {"orf":"1.3","kind":"modification","id":"m","version":1,"name":{"en":"M"},
+             "operations":[{"op":"add","key":"camber","description":{"name":{"en":"C"},"type":"text","scope":"axle"}}]}
+            """).Operations[0].Description!;
+        Assert.Equal(("decimal", "rad", SetupScope.Wheel), (op.Type, op.Unit, op.Scope));
+
+        // Before 1.3 the vocabulary does not govern: the description is read as written.
+        var old = RunSetupFile.Parse($$"""{"orf":"1.2","kind":"template","id":"t","version":1,"name":{"en":"T"},{{Parameters}}}""");
+        Assert.Equal(("text", "deg", SetupScope.Single), (old.Parameters[0].Value!.Type, old.Parameters[0].Value!.Unit, old.Parameters[0].Value!.Scope));
+    }
+
+    [Fact]
     public void Campos_opcionales_mal_formados_se_ignoran()
     {
         var read = RunSetupFile.Parse("""

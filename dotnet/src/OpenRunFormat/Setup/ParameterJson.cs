@@ -112,6 +112,27 @@ internal static class ParameterJson
         };
     }
 
+    /// <summary>
+    /// A description of a standard key read from a file where the vocabulary governs (specification §8.2): <c>type</c>,
+    /// <c>unit</c> and <c>scope</c> are the vocabulary's; positions outside the vocabulary's are dropped (none left means
+    /// the vocabulary's); a <c>precision</c> is dropped when the standard type is not <c>decimal</c>. Other keys are
+    /// returned as they are.
+    /// </summary>
+    public static ParameterDescription ForKey(string key, ParameterDescription d)
+    {
+        if (!SetupVocabulary.Standard.TryGetValue(key, out var standard)) return d;
+        var allowed = standard.Positions ?? SetupVocabulary.PositionsOf(standard.Scope);
+        var positions = d.Positions?.Where(p => allowed.Contains(p)).Distinct().ToList();
+        return d with
+        {
+            Type = standard.Type,
+            Unit = standard.Unit,
+            Scope = standard.Scope,
+            Positions = positions is { Count: > 0 } ? positions : standard.Positions,
+            Precision = standard.Type == "decimal" ? d.Precision : null,
+        };
+    }
+
     private static Dictionary<string, string>? ReadNames(JsonElement e)
     {
         if (e.ValueKind != JsonValueKind.Object) return null;
