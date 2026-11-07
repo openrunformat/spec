@@ -376,7 +376,7 @@ person. `name` is personal data: writers SHOULD only include it with the user's 
 The standard vocabulary governs the keys of `setup` values **only in files whose `orf` is 1.3 or later** (same major).
 In a file with `orf` 1.0, 1.1 or 1.2 every `setup` key is free text, even one that looks like a standard key: a reader
 MUST NOT reinterpret it (for example, `camber` in a 1.2 file is not an angle in radians, and its value is not converted).
-The same rules apply to the `values` of a `.runsetup` file (section 12).
+The same rules apply to the `values` of a `.runsetup` file (section 11).
 
 **Keys.** A key is a base key, optionally followed by a position suffix:
 
@@ -476,7 +476,7 @@ The directory `conformance/` contains synthetic files that every implementation 
   `{"kind": "template|modification|setup", "parameters": n, "values": n, "operations": n (optional)}`: a reader MUST
   accept the file and produce that kind and those numbers of `parameters` entries, `values` (0 when absent) and
   `operations`. Each file matches `schema/runsetup.schema.json`.
-- `conformance/runsetup/invalid/*.runsetup`: a reader MUST reject each file (section 12.3).
+- `conformance/runsetup/invalid/*.runsetup`: a reader MUST reject each file (section 11.3).
 - `conformance/circuit-ids.json`: lists of valid and invalid circuit identifiers (section 10) and of valid and invalid
   `orf:circuit/` URIs. For each valid entry it gives the circuit part, the variant (or `null`) and whether the id is
   provisional. An implementation of the grammar MUST accept every valid entry with those parts and reject every
@@ -581,24 +581,14 @@ itself, whichever the origin; a `.runlog` must not need the registry to be under
 When the finish line of the data source and the one of the registry differ, a writer SHOULD record the distance
 between them, in metres, as a decimal string in the header `meta` key `circuit.finish_offset_m`.
 
-## 11. Example
-
-```jsonl
-{"k":"h","orf":"1.0","utc":1767225600000000000,"id":"demo-1","kind":"synthetic"}
-{"k":"ch","id":"speed","unit":"m/s","hz":10}
-{"k":"d","ch":"speed","t0":0,"v":[0.0,1.5,3.25,null]}
-{"k":"seg","kind":"lap","s":0,"e":400000000,"src":"origin"}
-{"k":"end","dur":400000000,"n":4}
-```
-
-## 12. Setup files `.runsetup`
+## 11. Setup files `.runsetup`
 
 A `.runsetup` file (added in 1.3) holds a setup definition that does not belong to any `.runlog`: a **template** (the
 parameters a vehicle has), a **modification** (a package that adds, changes or removes parameters, for example
 coilovers) or a complete **setup** (values someone used). It is the common form to share, import and export them. The
 file is a single UTF-8 JSON object without BOM, not compressed.
 
-### 12.1 Fields
+### 11.1 Fields
 
 | Field | Type | | Meaning |
 |---|---|---|---|
@@ -609,10 +599,10 @@ file is a single UTF-8 JSON object without BOM, not compressed.
 | `appliesTo` | array | O | Identifiers (non-empty strings) of the vehicle models the file is meant for; absent or empty for a generic file |
 | `name` | object | R | Name per language tag; string values, at least one |
 | `vehicle` | object | O | Free dictionary of strings. Without personal data unless the person agreed |
-| `parameters` | object | O | Parameters by base key, **in order** (section 12.2) |
+| `parameters` | object | O | Parameters by base key, **in order** (section 11.2) |
 | `values` | object | R/O | Setup values, string to string, with the keys and rules of section 8.1. Required in a setup |
 | `damperWays` | object | O | `{ "front": integer, "rear": integer }`: damping adjustment ways (0 to 4) of each axle |
-| `operations` | array | O | In a modification: operations applied in order (section 12.4) |
+| `operations` | array | O | In a modification: operations applied in order (section 11.4) |
 | `composition` | object | O | In a setup: `{ "base": ref, "modifications": [ref...] }`, the layers it was built from, where `ref` is `{ "id": string, "version": integer }` |
 | `extensions` | object | O | Data of applications, one key per application (for example `x-myapp`), any JSON value |
 
@@ -621,14 +611,14 @@ A **template** has `id`, `version`, its `parameters` and, when the vehicle has a
 the descriptions of its `x-` keys), `damperWays` and `composition`. As in a `.runmeta`, the setup vocabulary of
 section 8.1 governs the keys only when `orf` is 1.3 or later.
 
-### 12.2 Parameters
+### 11.2 Parameters
 
 `parameters` maps a base key to its description (section 8.2). A key of the standard vocabulary used with its standard
 definition has the value `{}` (readers also accept `null`); any other key needs a description, and a standard key MAY
 have one (for example a translated name or limits). The order of the entries is the order in which a consumer shows the
 parameters and the order the composition starts from.
 
-### 12.3 Reading
+### 11.3 Reading
 
 A reader MUST reject the file when the JSON is broken or not an object; `orf` is missing, not a string or has a major
 version other than 1; `kind` is missing, not a string or unknown; `id` is present and not a non-empty string; `version`
@@ -641,7 +631,7 @@ Everything else is tolerated:
 - An entry of `parameters` is ignored on its own when its key is empty, its description is malformed (section 8.2), or
   it is `{}` or `null` for a key that is not in the standard vocabulary. If a key appears twice, it keeps the position of
   the first and the description of the last.
-- An operation is ignored on its own when it is malformed (section 12.4).
+- An operation is ignored on its own when it is malformed (section 11.4).
 - A malformed `damperWays` (missing `front` or `rear`, not an integer, outside 0 to 4), `composition` (missing or
   malformed `base`, `modifications` not an array of refs, a ref without a non-empty `id` or a positive `version`) or
   `extensions` (not an object) is ignored as a whole; so are `parameters` and `operations` of the wrong JSON type.
@@ -649,7 +639,7 @@ Everything else is tolerated:
 Readers accept any `orf` 1.y, also lower than 1.3. Unknown fields are ignored and are not kept when a file is rewritten;
 an application keeps its own data in `extensions`, which a writer that rewrites a file SHOULD keep as it is.
 
-### 12.4 Operations
+### 11.4 Operations
 
 | Operation | Shape |
 |---|---|
@@ -663,10 +653,10 @@ when it is not an object, `op` is missing or unknown, an `add`, `change` or `rem
 or `change` has a malformed `description` or a non-standard key without one, or a `damperWays` lacks a valid `ways`. A
 `description` on a `remove` is ignored.
 
-### 12.5 Composition
+### 11.5 Composition
 
-A consumer builds the parameters of a vehicle from a base template and modifications as follows (this is what
-`RunSetupComposer` of the reference library does). The base MUST be a template and each layer a modification.
+Applications compose layers as follows to build the parameters of a vehicle from a base template and modifications.
+The base MUST be a template and each layer a modification.
 
 1. Start with the `parameters` of the base, in order, and its `damperWays` (`{front: 0, rear: 0}` when absent).
 2. Apply the operations of each modification, modifications in the given order and operations in file order:
@@ -711,4 +701,14 @@ A modification for 2-way coilovers:
     { "op": "damperWays", "ways": { "front": 2, "rear": 2 } }
   ]
 }
+```
+
+## 12. Example
+
+```jsonl
+{"k":"h","orf":"1.0","utc":1767225600000000000,"id":"demo-1","kind":"synthetic"}
+{"k":"ch","id":"speed","unit":"m/s","hz":10}
+{"k":"d","ch":"speed","t0":0,"v":[0.0,1.5,3.25,null]}
+{"k":"seg","kind":"lap","s":0,"e":400000000,"src":"origin"}
+{"k":"end","dur":400000000,"n":4}
 ```

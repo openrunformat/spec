@@ -6,9 +6,10 @@
   `<key>.ref` link to a public catalog, `x-` for non-standard keys and values in SI; it governs only files with `orf`
   1.3 or later, so keys of 1.0–1.2 files stay free text. `driver_mass` and parameters marked `personal` are personal
   data. The `.runmeta` gains `parameters` (section 8.2), descriptions of setup parameters; a reader ignores a
-  malformed entry on its own. New section 12: setup files `.runsetup` (template, modification, setup), their
-  operations and the composition rule; damper keys derive only from the final damper ways. `expected.json` of
-  `runmeta/valid` accepts `parameters` and `setupKeys`, and `conformance/runsetup/` is new (section 9).
+  malformed entry on its own. New section 11: setup files `.runsetup` (template, modification, setup), their
+  operations and the composition rule; damper keys derive only from the final damper ways. The example moves to
+  section 12. `expected.json` of `runmeta/valid` accepts `parameters` and `setupKeys`, and `conformance/runsetup/` is
+  new (section 9).
 - Schema: `parameters` in `runmeta.schema.json`; new `runsetup.schema.json`.
 - Library: `OpenRunFormat.Setup` with `SetupKeys` and `SetupVocabulary` (`Applies`, `BaseKeyOf`, `PositionOf`,
   `KeysFor`, `DamperKeys`), `ParameterDescription`, `RunMeta.Parameters`, `RunSetup` and `RunSetupFile` (atomic write)

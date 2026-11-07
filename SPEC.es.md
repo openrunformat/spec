@@ -134,7 +134,7 @@ entrada** mal formada (falta `name`, `type` o `scope`, tipo JSON erróneo, `choi
 
 ## Ficheros `.runsetup`
 
-Desde 1.3 (SPEC §12): JSON UTF-8 sin comprimir, independiente de un `.runlog`, para compartir una **plantilla**
+Desde 1.3 (SPEC §11): JSON UTF-8 sin comprimir, independiente de un `.runlog`, para compartir una **plantilla**
 (`template`, los parámetros de un vehículo), una **modificación** (`modification`, un paquete que añade, cambia o quita
 parámetros) o un **reglaje** completo (`setup`, con sus valores). Campos: `orf` (los escritores DEBEN escribir 1.3 o
 posterior; se aceptan menores anteriores), `kind`, `id` y `version` (obligatorios en plantilla y modificación),
@@ -150,8 +150,8 @@ modificación no tiene `id` o `version`, un `setup` no tiene `values`, `name` no
 `composition` o `extensions` mal formado se ignora entero.
 
 Operaciones: `{"op":"add"|"change","key","description"?}`, `{"op":"remove","key"}` y
-`{"op":"damperWays","ways":{"front","rear"}}`; una clave no estándar necesita `description`. **Composición** (como
-`RunSetupComposer`): se parte de los parámetros y las vías de la plantilla base (0/0 si no tiene) y se aplican las
+`{"op":"damperWays","ways":{"front","rear"}}`; una clave no estándar necesita `description`. **Composición** (las
+aplicaciones componen las capas así): se parte de los parámetros y las vías de la plantilla base (0/0 si no tiene) y se aplican las
 modificaciones en orden. `add` de una clave existente actúa como `change` y avisa; `change` o `remove` de una ausente no
 hace nada y avisa; `damperWays` sustituye las vías. Al final, las claves de amortiguador **se derivan solo de las vías
 finales** (las añadidas o quitadas a mano se sustituyen, sin aviso): las de las vías delanteras para `fl fr`, las de las

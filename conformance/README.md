@@ -13,8 +13,8 @@ Files a reader of Open Run Format can test itself against.
   `schema/runmeta.schema.json`.
 - `runsetup/valid/`: each `*.runsetup` must be read without errors and match `schema/runsetup.schema.json`; its
   `*.expected.json` gives the `kind` and the number of `parameters`, `values` (0 when absent) and, when present,
-  `operations` a reader must report (SPEC §12).
-- `runsetup/invalid/`: each `*.runsetup` must be rejected (SPEC §12.3).
+  `operations` a reader must report (SPEC §11).
+- `runsetup/invalid/`: each `*.runsetup` must be rejected (SPEC §11.3).
 - `circuit-ids.json`: valid and invalid circuit identifiers (SPEC §10).
 
 All the data in these files is invented: coordinates around 40.0, -3.0, round timestamps and made-up device names. Some

@@ -43,7 +43,7 @@ RunHeader onlyHeader = RunlogReader.ReadHeader(File.OpenRead("run.runlog"));
 ```
 
 Companion files (`.runmeta`, setup and notes) are handled by `OpenRunFormat.Meta.RunMetaFile`. Setup files (`.runsetup`:
-templates, modifications and setups, SPEC §12) by `OpenRunFormat.Setup.RunSetupFile`; `RunSetupComposer` composes
+templates, modifications and setups, SPEC §11) by `OpenRunFormat.Setup.RunSetupFile`; `RunSetupComposer` composes
 them and `SetupVocabulary` holds the standard setup keys (SPEC §8.1).
 
 ```
