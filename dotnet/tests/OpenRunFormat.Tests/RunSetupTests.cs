@@ -31,7 +31,7 @@ public class RunSetupTests : IDisposable
         {
             Id = "generic-street",
             Version = 2,
-            AppliesTo = ["honda/civic/type-r@fl5"],
+            AppliesTo = ["example-make/example-model@gen1"],
             Vehicle = new Dictionary<string, string> { ["model"] = "demo" },
             Parameters =
             [
@@ -53,7 +53,7 @@ public class RunSetupTests : IDisposable
         Assert.Equal(RunSetupKind.Template, read.Kind);
         Assert.Equal("generic-street", read.Id);
         Assert.Equal(2, read.Version);
-        Assert.Equal(["honda/civic/type-r@fl5"], read.AppliesTo);
+        Assert.Equal(["example-make/example-model@gen1"], read.AppliesTo);
         Assert.Equal("Calle", read.Name["es"]);
         Assert.Equal("demo", read.Vehicle["model"]);
         Assert.Equal(["x-suspension", "tyre_pressure_cold", "x-drive-mode", "camber", "tyres"], read.Parameters.Select(p => p.Key));
@@ -213,6 +213,26 @@ public class RunSetupTests : IDisposable
         Assert.Null(read.DamperWays);
         Assert.Null(read.Composition);
         Assert.Empty(read.Extensions);
+    }
+
+    [Fact]
+    public void Lee_versiones_menores_anteriores_y_no_conserva_campos_desconocidos()
+    {
+        var read = RunSetupFile.Parse("""
+            {
+              "orf": "1.0", "kind": "setup", "name": {"en": "S"}, "values": {"camber.fl": "-0.03"},
+              "unknown": {"a": 1},
+              "extensions": {"x-myapp": {"levels": ["base"]}}
+            }
+            """);
+        Assert.Equal("1.0", read.Orf);
+
+        var text = RunSetupFile.Serialize(read);
+
+        Assert.DoesNotContain("unknown", text);
+        using var doc = JsonDocument.Parse(text);
+        Assert.Equal(RunFormat.Version, doc.RootElement.GetProperty("orf").GetString());
+        Assert.Equal("base", doc.RootElement.GetProperty("extensions").GetProperty("x-myapp").GetProperty("levels")[0].GetString());
     }
 
     [Fact]

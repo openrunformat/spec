@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.0 — specification 1.3 (draft), setup vocabulary and .runsetup
+
+- Spec: standard vocabulary of 21 setup keys (section 8.1), with position suffixes `.fl .fr .rl .rr` and `.f .r`, a
+  `<key>.ref` link to a public catalog, `x-` for non-standard keys and values in SI; it governs only files with `orf`
+  1.3 or later, so keys of 1.0–1.2 files stay free text. `driver_mass` and parameters marked `personal` are personal
+  data. The `.runmeta` gains `parameters` (section 8.2), descriptions of setup parameters; a reader ignores a
+  malformed entry on its own. New section 12: setup files `.runsetup` (template, modification, setup), their
+  operations and the composition rule; damper keys derive only from the final damper ways. `expected.json` of
+  `runmeta/valid` accepts `parameters` and `setupKeys`, and `conformance/runsetup/` is new (section 9).
+- Schema: `parameters` in `runmeta.schema.json`; new `runsetup.schema.json`.
+- Library: `OpenRunFormat.Setup` with `SetupKeys` and `SetupVocabulary` (`Applies`, `BaseKeyOf`, `PositionOf`,
+  `KeysFor`, `DamperKeys`), `ParameterDescription`, `RunMeta.Parameters`, `RunSetup` and `RunSetupFile` (atomic write)
+  and `RunSetupComposer`; the writers emit `orf` 1.3.
+- Conformance: `setup-1-3` and `parameters-malformed-entry-ignored` in `conformance/runmeta/valid/`, checked against the
+  schema; `conformance/runsetup/valid/` and `conformance/runsetup/invalid/`.
+
 ## 0.4.0 — specification 1.2 (draft), derivedFrom
 
 - Spec: the header gains the optional `derivedFrom` (`{id, s, e}`, section 3.1): the file is an excerpt of run `id`,

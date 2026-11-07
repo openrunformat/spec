@@ -143,6 +143,31 @@ public class RunSetupComposerTests
     }
 
     [Fact]
+    public void Claves_de_amortiguador_solo_salen_de_las_vias_finales()
+    {
+        var baseLayer = GenericStreet() with
+        {
+            Parameters = [new(SetupKeys.DamperClickReference, null), new(SetupKeys.DamperStiffness, null), new(SetupKeys.Camber, null)],
+            DamperWays = new DamperWays(1, 1),
+        };
+        var mod = Mod("m",
+            new SetupOperation(SetupOperationKind.Remove, SetupKeys.DamperStiffness),
+            new SetupOperation(SetupOperationKind.Add, SetupKeys.DamperBump));
+
+        var composed = RunSetupComposer.Compose(baseLayer, [mod]);
+
+        // The explicit remove and add are overridden by the ways (1/1), without a warning.
+        Assert.Empty(composed.Warnings);
+        Assert.Equal(["damper_click_reference", "damper_stiffness", "camber"], composed.Parameters.Select(p => p.Key));
+
+        var noWays = RunSetupComposer.Compose(baseLayer,
+            [Mod("n", new SetupOperation(SetupOperationKind.DamperWays, Ways: new DamperWays(0, 0)))]);
+
+        // damper_click_reference is not derived from the ways: it stays with 0/0.
+        Assert.Equal(["damper_click_reference", "camber"], noWays.Parameters.Select(p => p.Key));
+    }
+
+    [Fact]
     public void Orden_de_modificaciones_importa()
     {
         var add = Mod("add", new SetupOperation(SetupOperationKind.Add, "x-a", Text("A")));
