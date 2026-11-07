@@ -302,8 +302,8 @@ public static class RunSetupFile
     }
 
     // `{}` or null is a standard key without description; anything else must be a valid description. An x- key needs a
-    // description; any other key this reader does not know (added by a later minor version) is kept as single-valued
-    // text. Repeated keys keep the first position and the last description.
+    // description; any other base key this reader does not know (added by a later minor version) is kept as
+    // single-valued text, and a key with a position or .ref suffix is ignored. Repeated keys keep the first position and the last description.
     private static List<KeyValuePair<string, ParameterDescription?>> ReadParameters(JsonElement root, bool vocabulary)
     {
         var result = new List<KeyValuePair<string, ParameterDescription?>>();
@@ -315,7 +315,7 @@ public static class RunSetupFile
             if (p.Value.ValueKind == JsonValueKind.Null
                 || (p.Value.ValueKind == JsonValueKind.Object && !p.Value.EnumerateObject().Any()))
             {
-                if (SetupVocabulary.IsCustom(p.Name)) continue;
+                if (SetupVocabulary.IsCustom(p.Name) || SetupVocabulary.BaseKeyOf(p.Name) != p.Name) continue;
                 description = SetupVocabulary.IsStandard(p.Name) ? null : UnknownKeyDescription(p.Name);
             }
             else if (ParameterJson.TryRead(p.Value) is { } d) description = vocabulary ? ParameterJson.ForKey(p.Name, d) : d;
@@ -366,7 +366,7 @@ public static class RunSetupFile
             if (description is null) return null;
             if (vocabulary) description = ParameterJson.ForKey(key, description);
         }
-        if (description is null && SetupVocabulary.IsCustom(key)) return null;
+        if (description is null && (SetupVocabulary.IsCustom(key) || SetupVocabulary.BaseKeyOf(key) != key)) return null;
         if (description is null && !SetupVocabulary.IsStandard(key)) description = UnknownKeyDescription(key);
         return new SetupOperation(kind, key, description);
     }

@@ -395,6 +395,21 @@ public class RunMetaTests : IDisposable
         Assert.Equal(0, camber.Max);
     }
 
+    [Fact]
+    public void Damper_click_reference_conserva_sus_opciones_en_runmeta()
+    {
+        var first = WriteRaw(_dir, RawWithParameters("""
+            {"damper_click_reference": {"name":{"en":"Click reference"},"type":"text","scope":"single"}}
+            """));
+        var path = Path.Combine(_dir, "twice.runmeta");
+        RunMetaFile.Write(path, RunMetaFile.Read(first));
+        RunMetaFile.Write(path, RunMetaFile.Read(path));
+
+        var d = RunMetaFile.Read(path).Parameters[SetupKeys.DamperClickReference];
+        Assert.Equal("choice", d.Type);
+        Assert.Equal(["from_hard", "from_soft"], d.Choices.Select(c => c.Id));
+    }
+
     [Theory]
     [InlineData("""5""")]
     [InlineData("""{"type":"text","scope":"single"}""")]

@@ -139,9 +139,13 @@ parámetro en `other` (la composición solo mira `suspension`). Un lector ignora
 entrada** mal formada (falta `name`, `type` o `scope`, tipo JSON erróneo, `choice` sin opciones, `min > max`,
 `precision` fuera de `decimal`, `clickReference` desconocido...); el resto de entradas y del fichero se lee igual.
 Una clave estándar PUEDE tener descripción, pero su `type`, `unit` y `scope` DEBEN ser los del vocabulario y los
-lectores usan los del vocabulario (si difieren, ignoran esos tres campos y conservan el resto); se respetan `name`,
-`min`/`max`, `precision` (solo si el tipo estándar es `decimal`) y `group`, y `positions` solo restringe las posiciones
-del vocabulario (las que quedan fuera se descartan). Rige donde rige el vocabulario (`orf` ≥ 1.3), también en `.runsetup`.
+lectores usan los del vocabulario (si difieren, ignoran esos tres campos y conservan el resto). `choices` y `allowOther`
+también son los del vocabulario: en la clave estándar `choice` (`damper_click_reference`, opciones `from_hard` y
+`from_soft`) una descripción solo PUEDE dar nombres a esos ids (otras opciones se ignoran y `allowOther` es `false`); en
+las demás claves estándar se descartan. De la descripción de una clave estándar solo se respetan `name`, `min`/`max`,
+`precision` (solo si el tipo estándar es `decimal`), `group`, `positions` (que solo restringe las posiciones del
+vocabulario; las que quedan fuera se descartan) y los nombres de las opciones del vocabulario. Rige donde rige el
+vocabulario (`orf` ≥ 1.3), también en `.runsetup`.
 
 ## Ficheros `.runsetup`
 
@@ -158,9 +162,9 @@ desconocidos se ignoran y no se conservan).
 Se rechaza el fichero si el JSON está roto, falta `orf` o su mayor no es 1, falta o es desconocido `kind`, `id` está vacío, `version` no es un
 entero positivo, una plantilla o modificación no tiene `id` o `version`, un `setup` no tiene `values`, `name` no tiene idiomas, o `vehicle`, `values` o
 `appliesTo` no son cadenas. Una entrada de `parameters` o una operación mal formadas se ignoran solas; por
-compatibilidad hacia delante, `{}`/`null` en `parameters`, o un `add`/`change` sin descripción, para una clave sin `x-`
-que el lector no conoce (p. ej. añadida en una versión menor posterior) se conserva como parámetro `text` de ámbito
-`single` con la clave por nombre (para una clave `x-` se ignora); un `damperWays`,
+compatibilidad hacia delante, `{}`/`null` en `parameters`, o un `add`/`change` sin descripción, para una clave base (sin sufijo
+de posición ni `.ref`) sin `x-` que el lector no conoce (p. ej. añadida en una versión menor posterior) se conserva como parámetro `text` de ámbito
+`single` con la clave por nombre (para una clave `x-` o con sufijo, como `camber.fl`, se ignora); un `damperWays`,
 `composition` o `extensions` mal formado se ignora entero. Al reescribir un fichero anterior a 1.3 se aplica el
 renombrado `x-legacy-` a las claves de `values` y `parameters`.
 

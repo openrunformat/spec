@@ -275,6 +275,47 @@ public class RunSetupTests : IDisposable
     }
 
     [Fact]
+    public void Damper_click_reference_conserva_sus_opciones_tras_dos_reescrituras()
+    {
+        var text = """
+            {"orf":"1.3","kind":"template","id":"t","version":1,"name":{"en":"T"},"parameters":{
+              "damper_click_reference": {"name":{"es":"Referencia"},"type":"text","scope":"wheel",
+                "choices":[{"id":"from_soft","name":{"es":"Desde blando"}},{"id":"middle","name":{"en":"Middle"}}],
+                "allowOther":true},
+              "camber": {"name":{"en":"Camber"},"type":"decimal","scope":"wheel","choices":[{"id":"a","name":{"en":"A"}}],"allowOther":true}
+            }}
+            """;
+        var read = RunSetupFile.Parse(RunSetupFile.Serialize(RunSetupFile.Parse(RunSetupFile.Serialize(RunSetupFile.Parse(text)))));
+
+        var d = Assert.Single(read.Parameters, p => p.Key == SetupKeys.DamperClickReference).Value!;
+        Assert.Equal(("choice", SetupScope.Single), (d.Type, d.Scope));
+        Assert.Equal(["from_hard", "from_soft"], d.Choices.Select(c => c.Id));
+        Assert.Equal("Desde blando", d.Choices[1].Name["es"]);
+        Assert.Contains("en", d.Choices[0].Name.Keys);
+        Assert.False(d.AllowOther);
+        Assert.Equal("Referencia", d.Name["es"]);
+        var camber = read.Parameters.Single(p => p.Key == SetupKeys.Camber).Value!;
+        Assert.Empty(camber.Choices);
+        Assert.False(camber.AllowOther);
+    }
+
+    [Fact]
+    public void Claves_con_sufijo_sin_descripcion_se_ignoran()
+    {
+        var template = RunSetupFile.Parse("""
+            {"orf":"1.4","kind":"template","id":"t","version":1,"name":{"en":"T"},
+             "parameters":{"camber.fl":{},"tyres.ref":null,"anti_dive":{}}}
+            """);
+        Assert.Equal(["anti_dive"], template.Parameters.Select(p => p.Key));
+
+        var mod = RunSetupFile.Parse("""
+            {"orf":"1.4","kind":"modification","id":"m","version":1,"name":{"en":"M"},
+             "operations":[{"op":"add","key":"camber.fl"},{"op":"change","key":"tyres.ref"},{"op":"add","key":"anti_dive"}]}
+            """);
+        Assert.Equal(["anti_dive"], mod.Operations.Select(o => o.Key));
+    }
+
+    [Fact]
     public void Campos_opcionales_mal_formados_se_ignoran()
     {
         var read = RunSetupFile.Parse("""

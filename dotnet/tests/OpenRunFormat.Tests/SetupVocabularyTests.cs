@@ -90,4 +90,13 @@ public class SetupVocabularyTests
         Assert.Throws<ArgumentOutOfRangeException>(() => SetupVocabulary.DamperKeys(5));
         Assert.Throws<ArgumentOutOfRangeException>(() => SetupVocabulary.DamperKeys(-1));
     }
+
+    [Fact]
+    public void Damper_click_reference_trae_sus_opciones()
+    {
+        var p = SetupVocabulary.Standard[SetupKeys.DamperClickReference];
+        Assert.Equal(["from_hard", "from_soft"], p.Choices!.Select(c => c.Id));
+        Assert.All(p.Choices!, c => Assert.False(string.IsNullOrEmpty(c.Name["en"])));
+        Assert.All(SetupVocabulary.Standard.Values.Where(x => x.Type != "choice"), x => Assert.Null(x.Choices));
+    }
 }

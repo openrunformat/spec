@@ -115,8 +115,9 @@ internal static class ParameterJson
     /// <summary>
     /// A description of a standard key read from a file where the vocabulary governs (specification §8.2): <c>type</c>,
     /// <c>unit</c> and <c>scope</c> are the vocabulary's; positions outside the vocabulary's are dropped (none left means
-    /// the vocabulary's); a <c>precision</c> is dropped when the standard type is not <c>decimal</c>. Other keys are
-    /// returned as they are.
+    /// the vocabulary's); a <c>precision</c> is dropped when the standard type is not <c>decimal</c>; <c>choices</c> are
+    /// the vocabulary's, with the names the description gives to the same ids, and <c>allowOther</c> is false. Other
+    /// keys are returned as they are.
     /// </summary>
     public static ParameterDescription ForKey(string key, ParameterDescription d)
     {
@@ -130,7 +131,18 @@ internal static class ParameterJson
             Scope = standard.Scope,
             Positions = positions is { Count: > 0 } ? positions : standard.Positions,
             Precision = standard.Type == "decimal" ? d.Precision : null,
+            Choices = (standard.Choices ?? []).Select(c => WithNames(c, d.Choices)).ToList(),
+            AllowOther = false,
         };
+    }
+
+    // A standard choice with the names that a description gives to the same id added (or replacing the standard ones).
+    private static ParameterChoice WithNames(ParameterChoice standard, IReadOnlyList<ParameterChoice> described)
+    {
+        var names = new Dictionary<string, string>(standard.Name);
+        foreach (var c in described.Where(c => c.Id == standard.Id))
+            foreach (var kv in c.Name) names[kv.Key] = kv.Value;
+        return standard with { Name = names };
     }
 
     private static Dictionary<string, string>? ReadNames(JsonElement e)

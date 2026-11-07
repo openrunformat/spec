@@ -447,11 +447,14 @@ and edit a parameter that is not in the standard vocabulary. Keys of the standar
 
 A key of the standard vocabulary MAY have a description (for example a translated name or limits). Its `type`, `unit`
 and `scope` MUST equal those of the vocabulary (section 8.1), and readers use the vocabulary's: a reader that finds
-different ones ignores those three fields and keeps the rest of the entry. A reader honours the other fields, such as
-`name`, `min` and `max`, `precision` (only when the standard type is `decimal`) and `group`; `positions` can only
-restrict the positions of the vocabulary, and a reader drops any position outside them (with none left, the
-vocabulary's apply). This applies wherever the vocabulary governs (`orf` 1.3 or later), also to descriptions in a
-`.runsetup` file.
+different ones ignores those three fields and keeps the rest of the entry. Likewise `choices` and `allowOther` are the
+vocabulary's: for a standard `choice` key (`damper_click_reference`, whose choices are `from_hard` and `from_soft`) a
+description MAY only give names to the vocabulary's choice ids, a reader ignores any other choice and `allowOther` is
+`false`; for any other standard key a reader drops `choices` and `allowOther`. Of a description of a standard key, a
+reader honours only `name`, `min` and `max`, `precision` (only when the standard type is `decimal`), `group`,
+`positions` and the names of the vocabulary's choices; `positions` can only restrict the positions of the vocabulary,
+and a reader drops any position outside them (with none left, the vocabulary's apply). This applies wherever the
+vocabulary governs (`orf` 1.3 or later), also to descriptions in a `.runsetup` file.
 
 | Field | Type | | Meaning |
 |---|---|---|---|
@@ -641,9 +644,10 @@ section 8.1 governs the keys only when `orf` is 1.3 or later.
 `parameters` maps a base key to its description (section 8.2). A key of the standard vocabulary used with its standard
 definition has the value `{}` (readers also accept `null`); any other key needs a description, and a standard key MAY
 have one (for example a translated name or limits), with the vocabulary's `type`, `unit` and `scope` (section 8.2).
-For forward compatibility, a reader that finds `{}` or `null` for a key that does not start with `x-` and is not in the
-vocabulary it knows (for example a key added by a later minor version) keeps the parameter, as type `text` and scope
-`single`, named after the key. The order of the entries is the order in which a consumer shows the parameters and the
+For forward compatibility, a reader that finds `{}` or `null` for a base key (a key without position or `.ref` suffix)
+that does not start with `x-` and is not in the vocabulary it knows (for example a key added by a later minor version)
+keeps the parameter, as type `text` and scope `single`, named after the key; `{}` or `null` for a key with a position
+or `.ref` suffix (for example `camber.fl`) is ignored. The order of the entries is the order in which a consumer shows the parameters and the
 order the composition starts from.
 
 ### 11.3 Reading
@@ -657,8 +661,8 @@ object of strings; `appliesTo` is not an array of non-empty strings.
 Everything else is tolerated:
 
 - An entry of `parameters` is ignored on its own when its key is empty, its description is malformed (section 8.2), or
-  it is `{}` or `null` for a key that starts with `x-`. `{}` or `null` for a key without `x-` that the reader does not
-  know is kept as `text`, `single` (section 11.2). If a key appears twice, it keeps the position of
+  it is `{}` or `null` for a key that starts with `x-` or has a position or `.ref` suffix. `{}` or `null` for a base key
+  without `x-` that the reader does not know is kept as `text`, `single` (section 11.2). If a key appears twice, it keeps the position of
   the first and the description of the last.
 - An operation is ignored on its own when it is malformed (section 11.4).
 - A malformed `damperWays` (missing `front` or `rear`, not an integer, outside 0 to 4), `composition` (missing or
@@ -681,9 +685,10 @@ an application keeps its own data in `extensions`, which a writer that rewrites 
 
 `description` is required for a key that is not in the standard vocabulary. A reader ignores an operation on its own
 when it is not an object, `op` is missing or unknown, an `add`, `change` or `remove` lacks a non-empty `key`, an `add`
-or `change` has a malformed `description` or an `x-` key without one, or a `damperWays` lacks a valid `ways`. A
+or `change` has a malformed `description`, or has none for an `x-` key or a key with a position or `.ref` suffix, or a
+`damperWays` lacks a valid `ways`. A
 `"description": null` on an `add` or `change` is treated as absent. A `description` on a `remove` is ignored. As in
-section 11.2, an `add` or `change` without description for a key without `x-` that the reader does not know is kept,
+section 11.2, an `add` or `change` without description for a base key without `x-` that the reader does not know is kept,
 with a description of type `text` and scope `single` named after the key.
 
 ### 11.5 Composition

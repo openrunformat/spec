@@ -7,16 +7,16 @@
   1.3 or later, so keys of 1.0–1.2 files stay free text; rewriting such a file as 1.3 converts known keys and renames
   every other key whose base key does not start with `x-` to `x-legacy-<key>`, and a rewrite never lowers `orf`. `driver_mass` and parameters marked `personal` are personal data. The
   `.runmeta` gains `parameters` (section 8.2), descriptions of setup parameters with an open list of groups; a reader
-  ignores a malformed entry on its own, and a description of a standard key keeps the vocabulary's type, unit and
-  scope (its positions can only restrict the vocabulary's). New section 11: setup files `.runsetup` (template, modification, setup), their
-  operations and the composition rule; damper keys derive only from the final damper ways; a key without `x-` that a reader does not know, with `{}`/`null`
+  ignores a malformed entry on its own, and a description of a standard key keeps the vocabulary's type, unit,
+  scope and choices (its positions can only restrict the vocabulary's; it may only name the standard choices). New section 11: setup files `.runsetup` (template, modification, setup), their
+  operations and the composition rule; damper keys derive only from the final damper ways; a base key without `x-` that a reader does not know, with `{}`/`null`
   or without description in an operation, is kept as single-valued text (forward compatibility). The example moves to
   section 12. `expected.json` of `runmeta/valid` accepts `parameters` and `setupKeys`, and `conformance/runsetup/` is
   new (section 9).
 - Schema: `parameters` in `runmeta.schema.json`; new `runsetup.schema.json`. In both, a description (`$defs/description`)
   of type `choice` needs at least one choice and `precision` is only allowed on a `decimal`.
 - Library: `OpenRunFormat.Setup` with `SetupKeys` and `SetupVocabulary` (`Applies`, `BaseKeyOf`, `PositionOf`,
-  `KeysFor`, `DamperKeys`), `ParameterDescription`, `RunMeta.Parameters`, `RunSetup` and `RunSetupFile` (atomic write; `Write`/`Serialize` throw `ArgumentException` for an object its reader
+  `KeysFor`, `DamperKeys`; `StandardParameter.Choices` holds the options of `damper_click_reference`), `ParameterDescription`, `RunMeta.Parameters`, `RunSetup` and `RunSetupFile` (atomic write; `Write`/`Serialize` throw `ArgumentException` for an object its reader
   would reject)
   and `RunSetupComposer` (positions of standard keys without description come from the vocabulary); the writers emit `orf` 1.3, or the object's `orf` when it is a later 1.y. When the object is older than 1.3, `RunMetaFile.Write` and
   `RunSetupFile.Write`/`Serialize` rename every setup and parameter key whose base key does not start with `x-` to

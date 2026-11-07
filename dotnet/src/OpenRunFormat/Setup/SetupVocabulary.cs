@@ -12,13 +12,15 @@ public enum SetupScope { Single, Axle, Wheel }
 /// <param name="Type">One of <c>text|bool|choice|integer|decimal</c>.</param>
 /// <param name="Positions">Restricts the positions that apply (for example front wheels only).</param>
 /// <param name="Personal">True for personal data, to be written only with consent.</param>
+/// <param name="Choices">Options of a <c>choice</c> key, with English names; null for other types.</param>
 public sealed record StandardParameter(
     string Key,
     SetupScope Scope,
     string? Unit,
     string Type,
     IReadOnlyList<string>? Positions = null,
-    bool Personal = false);
+    bool Personal = false,
+    IReadOnlyList<ParameterChoice>? Choices = null);
 
 /// <summary>Base keys of the standard setup vocabulary.</summary>
 public static class SetupKeys
@@ -76,7 +78,11 @@ public static class SetupVocabulary
             new(SetupKeys.DamperBumpHigh, SetupScope.Wheel, null, "integer"),
             new(SetupKeys.DamperReboundLow, SetupScope.Wheel, null, "integer"),
             new(SetupKeys.DamperReboundHigh, SetupScope.Wheel, null, "integer"),
-            new(SetupKeys.DamperClickReference, SetupScope.Single, null, "choice"),
+            new(SetupKeys.DamperClickReference, SetupScope.Single, null, "choice", Choices:
+            [
+                new ParameterChoice("from_hard", new Dictionary<string, string> { ["en"] = "From hard" }),
+                new ParameterChoice("from_soft", new Dictionary<string, string> { ["en"] = "From soft" }),
+            ]),
             new(SetupKeys.WingAngle, SetupScope.Axle, "rad", "decimal"),
             new(SetupKeys.BrakeBias, SetupScope.Single, "1", "decimal"),
             new(SetupKeys.FuelMass, SetupScope.Single, "kg", "decimal"),
