@@ -178,10 +178,36 @@ public class ConformanceTests
     [InlineData("""{"orf":"1.3","kind":"template","id":"t","version":1,"name":{"en":"A"},"parameters":{"x-a":null}}""")]
     [InlineData("""{"orf":"1.3","kind":"modification","id":"m","version":1,"name":{"en":"A"},"operations":[{"op":"add","key":"x-a"}]}""")]
     [InlineData("""{"orf":"1.3","kind":"modification","id":"m","version":1,"name":{"en":"A"},"operations":[{"op":"change","key":"x-a"}]}""")]
+    [InlineData("""{"orf":"1.3","kind":"template","id":"t","version":1,"name":{"en":"A"},"parameters":{"x-a":{"name":{"en":"A"},"type":"choice","scope":"single"}}}""")]
+    [InlineData("""{"orf":"1.3","kind":"template","id":"t","version":1,"name":{"en":"A"},"parameters":{"x-a":{"name":{"en":"A"},"type":"choice","scope":"single","choices":[]}}}""")]
+    [InlineData("""{"orf":"1.3","kind":"template","id":"t","version":1,"name":{"en":"A"},"parameters":{"x-a":{"name":{"en":"A"},"type":"integer","scope":"single","precision":1}}}""")]
+    [InlineData("""{"orf":"1.3","kind":"modification","id":"m","version":1,"name":{"en":"A"},"operations":[{"op":"add","key":"x-a","description":{"name":{"en":"A"},"type":"text","scope":"single","precision":0}}]}""")]
     public void Esquema_runsetup_rechaza_ficheros_mal_formados(string text)
     {
         using var json = JsonDocument.Parse(text);
         Assert.False(RunsetupSchema.Value.Evaluate(json.RootElement).IsValid);
+    }
+
+    [Theory]
+    [InlineData("""{"x-a":{"name":{"en":"A"},"type":"choice","scope":"single"}}""")]
+    [InlineData("""{"x-a":{"name":{"en":"A"},"type":"choice","scope":"single","choices":[]}}""")]
+    [InlineData("""{"x-a":{"name":{"en":"A"},"type":"text","scope":"single","precision":2}}""")]
+    public void Esquema_runmeta_rechaza_descripciones_mal_formadas(string parameters)
+    {
+        using var json = JsonDocument.Parse(
+            $$"""{"orf":"1.3","id":"r","runlogSha256":"{{new string('0', 64)}}","parameters":{{parameters}}}""");
+        Assert.False(RunmetaSchema.Value.Evaluate(json.RootElement).IsValid);
+    }
+
+    [Fact]
+    public void Esquema_runmeta_acepta_descripciones_correctas()
+    {
+        using var json = JsonDocument.Parse(
+            "{\"orf\":\"1.3\",\"id\":\"r\",\"runlogSha256\":\"" + new string('0', 64) + "\",\"parameters\":" + """
+            {"x-a":{"name":{"en":"A"},"type":"choice","scope":"single","choices":[{"id":"a","name":{"en":"A"}}]},
+             "x-b":{"name":{"en":"B"},"type":"decimal","scope":"axle","precision":2}}}
+            """);
+        Assert.True(RunmetaSchema.Value.Evaluate(json.RootElement).IsValid);
     }
 
     [Theory]

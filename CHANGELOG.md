@@ -13,7 +13,8 @@
   or without description in an operation, is kept as single-valued text (forward compatibility). The example moves to
   section 12. `expected.json` of `runmeta/valid` accepts `parameters` and `setupKeys`, and `conformance/runsetup/` is
   new (section 9).
-- Schema: `parameters` in `runmeta.schema.json`; new `runsetup.schema.json`.
+- Schema: `parameters` in `runmeta.schema.json`; new `runsetup.schema.json`. In both, a description (`$defs/description`)
+  of type `choice` needs at least one choice and `precision` is only allowed on a `decimal`.
 - Library: `OpenRunFormat.Setup` with `SetupKeys` and `SetupVocabulary` (`Applies`, `BaseKeyOf`, `PositionOf`,
   `KeysFor`, `DamperKeys`), `ParameterDescription`, `RunMeta.Parameters`, `RunSetup` and `RunSetupFile` (atomic write; `Write`/`Serialize` throw `ArgumentException` for an object its reader
   would reject)
