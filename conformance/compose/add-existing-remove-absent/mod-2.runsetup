@@ -1,0 +1,11 @@
+{
+  "orf": "1.3",
+  "kind": "modification",
+  "id": "mod-second",
+  "version": 1,
+  "name": { "en": "Second" },
+  "operations": [
+    { "op": "remove", "key": "x-note" },
+    { "op": "add", "key": "toe" }
+  ]
+}

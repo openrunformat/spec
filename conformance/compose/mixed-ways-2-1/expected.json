@@ -1,0 +1,13 @@
+{
+  "parameters": [
+    { "key": "ride_height", "positions": null },
+    { "key": "x-anti-roll-bar", "positions": null },
+    { "key": "damper_bump", "positions": ["fl", "fr"] },
+    { "key": "damper_rebound", "positions": ["fl", "fr"] },
+    { "key": "damper_stiffness", "positions": ["rl", "rr"] },
+    { "key": "camber", "positions": null },
+    { "key": "caster", "positions": ["fl", "fr"] }
+  ],
+  "damperWays": { "front": 2, "rear": 1 },
+  "warnings": 0
+}

@@ -1,0 +1,10 @@
+{
+  "parameters": [
+    { "key": "camber", "positions": null },
+    { "key": "tyres", "positions": null },
+    { "key": "x-engine-map", "positions": null },
+    { "key": "damper_stiffness", "positions": ["fl", "fr", "rl", "rr"] }
+  ],
+  "damperWays": { "front": 1, "rear": 1 },
+  "warnings": 0
+}

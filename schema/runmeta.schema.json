@@ -22,6 +22,11 @@
         }
       }
     },
+    "parameters": {
+      "description": "Descriptions of setup parameters outside the standard vocabulary, by base key. A malformed entry is ignored by readers.",
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/description" }
+    },
     "drivers": {
       "type": "array",
       "items": {
@@ -59,6 +64,49 @@
           "src": { "type": "string" }
         }
       }
+    }
+  },
+  "$defs": {
+    "description": {
+      "description": "A description of a setup parameter. A choice needs at least one option; precision only applies to a decimal.",
+      "type": "object",
+      "required": ["name", "type", "scope"],
+      "properties": {
+        "name": { "type": "object", "minProperties": 1, "additionalProperties": { "type": "string" } },
+        "type": { "enum": ["text", "bool", "choice", "integer", "decimal"] },
+        "scope": { "enum": ["single", "axle", "wheel"] },
+        "unit": { "type": "string" },
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "name": { "type": "object", "minProperties": 1, "additionalProperties": { "type": "string" } }
+            }
+          }
+        },
+        "allowOther": { "type": "boolean" },
+        "catalogKind": { "type": "string" },
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "precision": { "type": "integer", "minimum": 0 },
+        "group": { "type": "string" },
+        "personal": { "type": "boolean" },
+        "positions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "clickReference": { "enum": ["from_hard", "from_soft"] }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["type"], "properties": { "type": { "const": "choice" } } },
+          "then": { "required": ["choices"], "properties": { "choices": { "minItems": 1 } } }
+        },
+        {
+          "if": { "required": ["precision"] },
+          "then": { "properties": { "type": { "const": "decimal" } } }
+        }
+      ]
     }
   }
 }

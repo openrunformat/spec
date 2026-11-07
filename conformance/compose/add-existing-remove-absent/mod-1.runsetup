@@ -1,0 +1,13 @@
+{
+  "orf": "1.3",
+  "kind": "modification",
+  "id": "mod-first",
+  "version": 1,
+  "name": { "en": "First" },
+  "operations": [
+    { "op": "add", "key": "camber" },
+    { "op": "remove", "key": "x-missing" },
+    { "op": "change", "key": "x-absent", "description": { "name": { "en": "Absent" }, "type": "text", "scope": "single" } },
+    { "op": "add", "key": "x-new", "description": { "name": { "en": "New" }, "type": "bool", "scope": "single" } }
+  ]
+}

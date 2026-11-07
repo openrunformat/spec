@@ -1,0 +1,11 @@
+{
+  "orf": "1.3",
+  "kind": "template",
+  "id": "example-base",
+  "version": 1,
+  "name": { "en": "Example base" },
+  "parameters": {
+    "camber": {},
+    "x-note": { "name": { "en": "Note" }, "type": "text", "scope": "single" }
+  }
+}

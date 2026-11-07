@@ -1,0 +1,9 @@
+{
+  "parameters": [
+    { "key": "camber", "positions": null },
+    { "key": "x-new", "positions": null },
+    { "key": "toe", "positions": null }
+  ],
+  "damperWays": { "front": 0, "rear": 0 },
+  "warnings": 3
+}

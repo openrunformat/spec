@@ -1,0 +1,25 @@
+{
+  "orf": "1.3",
+  "kind": "template",
+  "id": "generic-street",
+  "version": 1,
+  "name": { "en": "Street car", "es": "Coche de calle" },
+  "parameters": {
+    "tyre_pressure_cold": {},
+    "tyre_pressure_hot": {},
+    "camber": {},
+    "toe": {},
+    "tyres": {},
+    "fuel_mass": null,
+    "x-suspension": {
+      "name": { "en": "Suspension", "es": "Suspensión" },
+      "type": "choice",
+      "scope": "single",
+      "choices": [ { "id": "stock", "name": { "en": "Stock", "es": "De serie" } } ],
+      "allowOther": true,
+      "group": "suspension"
+    },
+    "x-note": { "name": { "en": "Note", "es": "Nota" }, "type": "text", "scope": "single", "group": "other" }
+  },
+  "damperWays": { "front": 0, "rear": 0 }
+}

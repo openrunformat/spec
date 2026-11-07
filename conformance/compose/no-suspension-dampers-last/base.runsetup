@@ -1,0 +1,12 @@
+{
+  "orf": "1.3",
+  "kind": "template",
+  "id": "example-base",
+  "version": 1,
+  "name": { "en": "Example base" },
+  "parameters": {
+    "camber": {},
+    "tyres": {},
+    "x-engine-map": { "name": { "en": "Engine map" }, "type": "integer", "scope": "single", "group": "electronics" }
+  }
+}

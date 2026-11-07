@@ -1,6 +1,6 @@
-# Open Run Format (ORF) 1.2 — resumen en español
+# Open Run Format (ORF) 1.3 — resumen en español
 
-Este resumen no es normativo: manda [SPEC.md](SPEC.md) (inglés). Versión de la especificación: 1.2 (borrador).
+Este resumen no es normativo: manda [SPEC.md](SPEC.md) (inglés). Versión de la especificación: 1.3 (borrador).
 
 ## Qué es
 
@@ -88,7 +88,8 @@ no fuerza la escritura a disco (no hace fsync). Quien reescribe un fichero exist
 ## `.runmeta`
 
 Fichero aparte, opcional, JSON sin comprimir: `orf`, `id`, `runlogSha256` y opcionales `vehicle`, `setup`
-(`{s, e, values}`), `drivers` (`{s, e, id, name, initials?}`, desde 1.1), `notes` (`{t, text}`) y `userSegments`. Los instantes (`s`, `e`, `t`, `splits`) son **epoch ns absolutos**; `time` de `userSegments` sigue siendo una duración. Solo se
+(`{s, e, values}`), `drivers` (`{s, e, id, name, initials?}`, desde 1.1), `parameters` (desde 1.3), `notes`
+(`{t, text}`) y `userSegments`. Los instantes (`s`, `e`, `t`, `splits`) son **epoch ns absolutos**; `time` de `userSegments` sigue siendo una duración. Solo se
 aplica si `id` coincide con el de la cabecera y el hash con el del `.runlog`.
 
 `drivers` (1.1): quién conducía en cada intervalo. `s` y `e` son epoch ns absolutos con `e > s` y el intervalo es
@@ -98,6 +99,85 @@ es un objeto, le falta `s`, `e`, `id` o `name`, tiene un tipo erróneo, `id` o `
 otra; el resto del fichero se lee igual. Un hueco significa «sin piloto registrado». `id` es un identificador opaco y
 estable que elige el escritor: DEBERÍA ser aleatorio y NO DEBE derivarse de datos personales. `name` es un dato
 personal: los escritores DEBERÍAN incluirlo solo con el consentimiento del usuario.
+
+Vocabulario de `setup` (1.3, SPEC §8.1): **solo rige si `orf` es 1.3 o posterior**. En un fichero 1.0–1.2 todas las
+claves de `setup` son texto libre y NO DEBEN reinterpretarse (un `camber` de un fichero 1.2 no son radianes ni se
+convierte). Un escritor que reescribe un fichero con `orf` anterior a 1.3 DEBE, antes de escribirlo como 1.3 o
+posterior, convertir al vocabulario las claves cuyo significado conoce y renombrar **toda otra clave cuya clave base no
+empiece por `x-`** (choque o no con el vocabulario) a `x-legacy-<clave>`, conservando el sufijo de posición y la
+compañera `.ref` (`camber.fl` pasa a `x-legacy-camber.fl` y `front_pressure` a `x-legacy-front_pressure`); las claves
+`x-` se conservan. La biblioteca de referencia no convierte nada: renombra toda clave base que no empiece por `x-`. Un escritor NO DEBE
+escribir un `orf` menor que el del fichero que reescribe: escribe el mayor de los dos (también en `.runsetup`). Una clave es una clave base con sufijo de posición opcional: por rueda `.fl`, `.fr`, `.rl`, `.rr`; por eje
+`.f`, `.r`; sin sufijo si el valor es único. La clave compañera `<clave>.ref` vale `<catálogo>:<id>` y solo enlaza a
+catálogos **públicos**, nunca a ids de unidades privadas ni de bibliotecas locales. Una clave fuera del vocabulario DEBE
+empezar por `x-`, y un escritor NO DEBE usar una clave estándar con otro significado, unidad o ámbito. Los valores son siempre
+cadenas; los numéricos en SI, en notación de ida y vuelta y con punto decimal. Las 21 claves estándar:
+
+| Clave | Ámbito | Unidad | Tipo |
+|---|---|---|---|
+| `tyre_pressure_cold`, `tyre_pressure_hot` | rueda | Pa (manométrica) | decimal |
+| `camber` (negativa = parte superior hacia dentro), `toe` (positiva = convergente) | rueda | rad | decimal |
+| `caster` | rueda, solo delanteras | rad | decimal |
+| `ride_height` | eje | m | decimal |
+| `spring_rate` | rueda | N/m | decimal |
+| `damper_stiffness` (1 vía); `damper_bump`, `damper_rebound` (2 vías); `damper_bump_low`, `damper_bump_high` (3–4 vías); `damper_rebound_low`, `damper_rebound_high` (4 vías) | rueda | — (clics) | integer |
+| `damper_click_reference` (`from_hard` / `from_soft`) | único | — | choice |
+| `wing_angle` | eje | rad | decimal |
+| `brake_bias` (fracción delante, 0–1) | único | 1 | decimal |
+| `fuel_mass`, `ballast_mass`, `driver_mass` | único | kg | decimal |
+| `tyres` (modelo; admite `tyres.ref`) | único | — | text |
+
+`driver_mass`, y cualquier parámetro descrito con `"personal": true`, es un dato personal: los escritores DEBERÍAN
+incluirlo solo con el consentimiento del usuario.
+
+`parameters` (1.3, SPEC §8.2): objeto clave base → descripción `{name, type, scope, unit?, choices?, allowOther?,
+catalogKind?, min?, max?, precision?, group?, personal?, positions?, clickReference?}` para las claves no estándar (las
+estándar no la necesitan). `type`: `text`, `bool`, `choice`, `integer`, `decimal`; `scope`: `single`, `axle`, `wheel`;
+`group` es una lista abierta: los ids estándar son `tyres`, `geometry`, `suspension`, `aero`, `brakes`, `electronics`,
+`mass` y `other`; un lector DEBE aceptar cualquier cadena y una aplicación que no conoce un grupo DEBERÍA mostrar el
+parámetro en `other` (la composición solo mira `suspension`). Un lector ignora **solo la
+entrada** mal formada (falta `name`, `type` o `scope`, tipo JSON erróneo, `choice` sin opciones, `min > max`,
+`precision` fuera de `decimal`, `clickReference` desconocido...); el resto de entradas y del fichero se lee igual.
+Una clave estándar PUEDE tener descripción, pero su `type`, `unit` y `scope` DEBEN ser los del vocabulario y los
+lectores usan los del vocabulario (si difieren, ignoran esos tres campos y conservan el resto). `choices` y `allowOther`
+también son los del vocabulario: en la clave estándar `choice` (`damper_click_reference`, opciones `from_hard` y
+`from_soft`) una descripción solo PUEDE dar nombres a esos ids (otras opciones se ignoran y `allowOther` es `false`); en
+las demás claves estándar se descartan. De la descripción de una clave estándar solo se respetan `name`, `min`/`max`,
+`precision` (solo si el tipo estándar es `decimal`), `group`, `positions` (que solo restringe las posiciones del
+vocabulario; las que quedan fuera se descartan) y los nombres de las opciones del vocabulario. Rige donde rige el
+vocabulario (`orf` ≥ 1.3), también en `.runsetup`.
+
+## Ficheros `.runsetup`
+
+Desde 1.3 (SPEC §11): JSON UTF-8 sin comprimir, independiente de un `.runlog`, para compartir una **plantilla**
+(`template`, los parámetros de un vehículo), una **modificación** (`modification`, un paquete que añade, cambia o quita
+parámetros) o un **reglaje** completo (`setup`, con sus valores). Campos: `orf` (los escritores DEBEN escribir 1.3 o
+posterior; se aceptan menores anteriores), `kind`, `id` y `version` (obligatorios en plantilla y modificación),
+`appliesTo` (ids de modelo; vacío = genérico), `name` (por idioma), `vehicle`, `parameters` (en orden; `{}` para una
+clave estándar con su definición estándar, descripción para las demás), `values` (obligatorio en `setup`),
+`damperWays` (`{front, rear}`, 0–4), `operations`, `composition` (`{base, modifications}` con referencias `{id,
+version}`; sin `modifications` = ninguna) y `extensions` (un objeto por aplicación, p. ej. `x-myapp`, que se conserva al reescribir; los campos
+desconocidos se ignoran y no se conservan).
+
+Se rechaza el fichero si el JSON está roto, falta `orf` o su mayor no es 1, falta o es desconocido `kind`, `id` está vacío, `version` no es un
+entero positivo, una plantilla o modificación no tiene `id` o `version`, un `setup` no tiene `values`, `name` no tiene idiomas, o `vehicle`, `values` o
+`appliesTo` no son cadenas. Una entrada de `parameters` o una operación mal formadas se ignoran solas; por
+compatibilidad hacia delante, `{}`/`null` en `parameters`, o un `add`/`change` sin descripción, para una clave base (sin sufijo
+de posición ni `.ref`) sin `x-` que el lector no conoce (p. ej. añadida en una versión menor posterior) se conserva como parámetro `text` de ámbito
+`single` con la clave por nombre (para una clave `x-` o con sufijo, como `camber.fl`, se ignora); un `damperWays`,
+`composition` o `extensions` mal formado se ignora entero. Al reescribir un fichero anterior a 1.3 se aplica el
+renombrado `x-legacy-` a las claves de `values` y `parameters`.
+
+Operaciones: `{"op":"add"|"change","key","description"?}`, `{"op":"remove","key"}` y
+`{"op":"damperWays","ways":{"front","rear"}}`; una clave no estándar necesita `description` (`"description": null` cuenta como ausente). **Composición** (las
+aplicaciones componen las capas así): se parte de los parámetros y las vías de la plantilla base (0/0 si no tiene) y se aplican las
+modificaciones en orden. `add` de una clave existente actúa como `change` y avisa; `change` o `remove` de una ausente no
+hace nada y avisa; `damperWays` sustituye las vías. Al final, las claves de amortiguador **se derivan solo de las vías
+finales** (las añadidas o quitadas a mano se sustituyen, sin aviso): las de las vías delanteras para `fl fr`, las de las
+traseras para `rl rr` y una común a los dos ejes para las cuatro ruedas, colocadas tras el último parámetro de
+suspensión (un parámetro cuya descripción tiene el grupo `suspension`, o la clave `ride_height`, `spring_rate` o
+`damper_click_reference`) o al final.
+`damper_click_reference` no se deriva y se mantiene aunque las vías sean 0/0.
 
 ## Identificadores de circuito
 
@@ -128,8 +208,15 @@ circuito = `ES-catalunya`; id de variante = `ES-catalunya/gp@2023`. En `course` 
 `conformance/valid` (con `<nombre>.expected.json`, que incluye tiempos, valores y `end` cuando se declaran) debe leerse;
 `conformance/invalid` (un fichero por regla de la sección 4 de SPEC.md) debe rechazarse. La prosa de SPEC.md manda: los
 esquemas JSON pueden ser más estrictos.
-`conformance/runmeta/valid/<nombre>.runmeta` con `<nombre>.expected.json` `{"drivers": n}`: un lector DEBE aceptar el
-fichero y producir ese número de pilotos (un campo `drivers` ignorado cuenta 0).
+`conformance/runmeta/valid/<nombre>.runmeta` con `<nombre>.expected.json` `{"drivers": n, "parameters": n, "setupKeys": n}`
+(claves opcionales): un lector DEBE aceptar el fichero y producir ese número de pilotos (un campo `drivers` ignorado
+cuenta 0), de descripciones de parámetros y de claves del primer intervalo de `setup`.
+`conformance/runsetup/valid/<nombre>.runsetup` con `<nombre>.expected.json` `{"kind", "parameters": n, "values": n,
+"operations": n (opcional)}` debe leerse y cumplir el esquema; `conformance/runsetup/invalid` debe rechazarse.
+`conformance/compose/<caso>/` tiene `base.runsetup`, las modificaciones `mod-1.runsetup`, `mod-2.runsetup`... (en ese
+orden) y `expected.json` `{"parameters": [{"key", "positions": [...] | null}...], "damperWays": {front, rear},
+"warnings": n}`: una implementación de la composición DEBE producir esos parámetros en ese orden con esas posiciones
+(`null` = todo su ámbito), esas vías finales y ese número de avisos.
 `conformance/circuit-ids.json` lista ids y URI válidos e inválidos; `expected.json` puede llevar un bloque `course`.
 Esquemas JSON en `schema/` (un registro por línea). Un campo opcional con tipo JSON incorrecto (p. ej. un valor de `meta`
 que no es cadena) invalida el fichero.

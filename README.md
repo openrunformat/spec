@@ -5,7 +5,7 @@ Time is always integer nanoseconds; records are compact JSON lines (UTF-8, no BO
 independent frames so that a recording survives a sudden stop.
 
 - **Repository:** <https://github.com/openrunformat/spec>
-- **Specification:** [SPEC.md](SPEC.md) (normative, English) · [SPEC.es.md](SPEC.es.md) (summary, Spanish) · status: 1.2 draft.
+- **Specification:** [SPEC.md](SPEC.md) (normative, English) · [SPEC.es.md](SPEC.es.md) (summary, Spanish) · status: 1.3 draft.
 - **JSON schemas:** [schema/](schema/). **Conformance files:** [conformance/](conformance/).
 - **Circuit identifiers:** SPEC §10; registry: <https://github.com/openrunformat/circuits>
 - Inspired by [Motorsport Telemetry JSON (MTJ)](https://github.com/tobi/motorsport-telemetry-rs) (MIT); no code was copied.
@@ -42,7 +42,9 @@ RunDocument doc = Runlog.Read("run.runlog");   // doc.Complete, doc.Channels["sp
 RunHeader onlyHeader = RunlogReader.ReadHeader(File.OpenRead("run.runlog"));
 ```
 
-Companion files (`.runmeta`, setup and notes) are handled by `OpenRunFormat.Meta.RunMetaFile`.
+Companion files (`.runmeta`, setup and notes) are handled by `OpenRunFormat.Meta.RunMetaFile`. Setup files (`.runsetup`:
+templates, modifications and setups, SPEC §11) by `OpenRunFormat.Setup.RunSetupFile`; `RunSetupComposer` composes
+them and `SetupVocabulary` holds the standard setup keys (SPEC §8.1).
 
 ```
 dotnet test dotnet/OpenRunFormat.sln

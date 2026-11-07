@@ -1,0 +1,187 @@
+using System.Text.Json;
+
+namespace OpenRunFormat.Setup;
+
+/// <summary>Tolerant JSON reading and writing of a single <see cref="ParameterDescription"/>.</summary>
+internal static class ParameterJson
+{
+    private static readonly string[] Types = ["text", "bool", "choice", "integer", "decimal"];
+
+    public static void Write(Utf8JsonWriter w, ParameterDescription p)
+    {
+        w.WriteStartObject();
+        WriteNames(w, "name", p.Name);
+        w.WriteString("type", p.Type);
+        w.WriteString("scope", p.Scope switch { SetupScope.Axle => "axle", SetupScope.Wheel => "wheel", _ => "single" });
+        if (p.Unit is not null) w.WriteString("unit", p.Unit);
+        if (p.Choices.Count > 0)
+        {
+            w.WriteStartArray("choices");
+            foreach (var c in p.Choices)
+            {
+                w.WriteStartObject();
+                w.WriteString("id", c.Id);
+                WriteNames(w, "name", c.Name);
+                w.WriteEndObject();
+            }
+            w.WriteEndArray();
+        }
+        if (p.AllowOther) w.WriteBoolean("allowOther", true);
+        if (p.CatalogKind is not null) w.WriteString("catalogKind", p.CatalogKind);
+        if (p.Min is { } min) w.WriteNumber("min", min);
+        if (p.Max is { } max) w.WriteNumber("max", max);
+        if (p.Precision is { } prec) w.WriteNumber("precision", prec);
+        if (p.Group is not null) w.WriteString("group", p.Group);
+        if (p.Personal) w.WriteBoolean("personal", true);
+        if (p.Positions is not null)
+        {
+            w.WriteStartArray("positions");
+            foreach (var pos in p.Positions) w.WriteStringValue(pos);
+            w.WriteEndArray();
+        }
+        if (p.ClickReference is not null) w.WriteString("clickReference", p.ClickReference);
+        w.WriteEndObject();
+    }
+
+    private static void WriteNames(Utf8JsonWriter w, string property, IReadOnlyDictionary<string, string> names)
+    {
+        w.WriteStartObject(property);
+        foreach (var kv in names) w.WriteString(kv.Key, kv.Value);
+        w.WriteEndObject();
+    }
+
+    /// <summary>Reads a description; null when it is malformed (anything wrong makes the whole entry unusable).</summary>
+    public static ParameterDescription? TryRead(JsonElement e)
+    {
+        if (e.ValueKind != JsonValueKind.Object) return null;
+        if (!e.TryGetProperty("name", out var nameEl) || ReadNames(nameEl) is not { } name) return null;
+        if (!Str(e, "type", out var type) || type is null || Array.IndexOf(Types, type) < 0) return null;
+        if (!Str(e, "scope", out var scopeText)) return null;  // absent or null falls to the default below
+        SetupScope scope;
+        switch (scopeText)
+        {
+            case "single": scope = SetupScope.Single; break;
+            case "axle": scope = SetupScope.Axle; break;
+            case "wheel": scope = SetupScope.Wheel; break;
+            default: return null;
+        }
+
+        var choices = new List<ParameterChoice>();
+        if (e.TryGetProperty("choices", out var chEl))
+        {
+            if (chEl.ValueKind != JsonValueKind.Array) return null;
+            foreach (var c in chEl.EnumerateArray())
+            {
+                if (c.ValueKind != JsonValueKind.Object || !Str(c, "id", out var id) || string.IsNullOrEmpty(id)
+                    || !c.TryGetProperty("name", out var cn) || ReadNames(cn) is not { } cname) return null;
+                choices.Add(new ParameterChoice(id, cname));
+            }
+        }
+        if (type == "choice" && choices.Count == 0) return null;
+
+        if (!Str(e, "unit", out var unit) || !Str(e, "catalogKind", out var catalogKind)
+            || !Str(e, "group", out var group) || !Str(e, "clickReference", out var click)
+            || !Bool(e, "allowOther", out var allowOther) || !Bool(e, "personal", out var personal)
+            || !Num(e, "min", out var min) || !Num(e, "max", out var max)) return null;
+        if (min > max) return null;
+        if (click is not (null or "from_hard" or "from_soft")) return null;
+
+        int? precision = null;
+        if (e.TryGetProperty("precision", out var pEl))
+        {
+            if (pEl.ValueKind != JsonValueKind.Number || !pEl.TryGetInt32(out var pr) || pr < 0 || type != "decimal") return null;
+            precision = pr;
+        }
+
+        List<string>? positions = null;
+        if (e.TryGetProperty("positions", out var posEl))
+        {
+            if (posEl.ValueKind != JsonValueKind.Array) return null;
+            positions = [];
+            foreach (var x in posEl.EnumerateArray())
+            {
+                if (x.ValueKind != JsonValueKind.String || string.IsNullOrEmpty(x.GetString())) return null;
+                positions.Add(x.GetString()!);
+            }
+        }
+
+        return new ParameterDescription(name, type, scope)
+        {
+            Unit = unit, Choices = choices, AllowOther = allowOther, CatalogKind = catalogKind, Min = min, Max = max,
+            Precision = precision, Group = group, Personal = personal, Positions = positions, ClickReference = click,
+        };
+    }
+
+    /// <summary>
+    /// A description of a standard key read from a file where the vocabulary governs (specification §8.2): <c>type</c>,
+    /// <c>unit</c> and <c>scope</c> are the vocabulary's; positions outside the vocabulary's are dropped (none left means
+    /// the vocabulary's); a <c>precision</c> is dropped when the standard type is not <c>decimal</c>; <c>choices</c> are
+    /// the vocabulary's, with the names the description gives to the same ids, and <c>allowOther</c> is false. Other
+    /// keys are returned as they are.
+    /// </summary>
+    public static ParameterDescription ForKey(string key, ParameterDescription d)
+    {
+        if (!SetupVocabulary.Standard.TryGetValue(key, out var standard)) return d;
+        var allowed = standard.Positions ?? SetupVocabulary.PositionsOf(standard.Scope);
+        var positions = d.Positions?.Where(p => allowed.Contains(p)).Distinct().ToList();
+        return d with
+        {
+            Type = standard.Type,
+            Unit = standard.Unit,
+            Scope = standard.Scope,
+            Positions = positions is { Count: > 0 } ? positions : standard.Positions,
+            Precision = standard.Type == "decimal" ? d.Precision : null,
+            Choices = (standard.Choices ?? []).Select(c => WithNames(c, d.Choices)).ToList(),
+            AllowOther = false,
+        };
+    }
+
+    // A standard choice with the names that a description gives to the same id added (or replacing the standard ones).
+    private static ParameterChoice WithNames(ParameterChoice standard, IReadOnlyList<ParameterChoice> described)
+    {
+        var names = new Dictionary<string, string>(standard.Name);
+        foreach (var c in described.Where(c => c.Id == standard.Id))
+            foreach (var kv in c.Name) names[kv.Key] = kv.Value;
+        return standard with { Name = names };
+    }
+
+    private static Dictionary<string, string>? ReadNames(JsonElement e)
+    {
+        if (e.ValueKind != JsonValueKind.Object) return null;
+        var result = new Dictionary<string, string>();
+        foreach (var p in e.EnumerateObject())
+        {
+            if (p.Value.ValueKind != JsonValueKind.String) return null;
+            result[p.Name] = p.Value.GetString()!;
+        }
+        return result.Count == 0 ? null : result;
+    }
+
+    // Absent => ok with null; present with the wrong kind => false.
+    private static bool Str(JsonElement e, string name, out string? value)
+    {
+        value = null;
+        if (!e.TryGetProperty(name, out var v)) return true;
+        if (v.ValueKind != JsonValueKind.String) return false;
+        value = v.GetString();
+        return true;
+    }
+
+    private static bool Bool(JsonElement e, string name, out bool value)
+    {
+        value = false;
+        if (!e.TryGetProperty(name, out var v)) return true;
+        if (v.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) return false;
+        value = v.GetBoolean();
+        return true;
+    }
+
+    private static bool Num(JsonElement e, string name, out double? value)
+    {
+        value = null;
+        if (!e.TryGetProperty(name, out var v)) return true;
+        if (v.ValueKind != JsonValueKind.Number || !v.TryGetDouble(out var d)) return false;
+        value = d;
+        return true;
+    }
+}

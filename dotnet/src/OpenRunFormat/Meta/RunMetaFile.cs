@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using OpenRunFormat.Json;
+using OpenRunFormat.Setup;
 
 namespace OpenRunFormat.Meta;
 
@@ -20,18 +21,22 @@ public static class RunMetaFile
     };
 
     /// <summary>
-/// Writes the companion. <c>Orf</c> is forced to <see cref="RunFormat.Version"/>. The write is atomic: a temporary
+/// Writes the companion. <c>Orf</c> is written as the higher of <c>meta.Orf</c> and <see cref="RunFormat.Version"/> (a
+/// rewrite never lowers the version, specification §8.1); when the companion is older than 1.3,
+/// every setup key (and parameter key) whose base key does not start with <c>x-</c> is written as <c>x-legacy-&lt;key&gt;</c>
+/// (specification §8.1), without converting values. The write is atomic: a temporary
 /// file in the same directory is flushed to disk and moved over the target; on failure an existing target is untouched.
 /// </summary>
     public static void Write(string path, RunMeta meta)
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(meta);
+        var legacy = LegacyKeys.NeedsRename(meta.Orf);
         using var ms = new MemoryStream();
         using (var w = new Utf8JsonWriter(ms, WriterOptions))
         {
             w.WriteStartObject();
-            w.WriteString("orf", RunFormat.Version);
+            w.WriteString("orf", RunFormat.RewriteVersion(meta.Orf));
             w.WriteString("id", meta.Id);
             w.WriteString("runlogSha256", meta.RunlogSha256);
             w.WriteStartObject("vehicle");
@@ -44,11 +49,21 @@ public static class RunMetaFile
                 w.WriteNumber("s", s.S);
                 w.WriteNumber("e", s.E);
                 w.WriteStartObject("values");
-                foreach (var kv in s.Values) w.WriteString(kv.Key, kv.Value);
+                foreach (var kv in legacy ? LegacyKeys.Rename(s.Values) : s.Values) w.WriteString(kv.Key, kv.Value);
                 w.WriteEndObject();
                 w.WriteEndObject();
             }
             w.WriteEndArray();
+            if (meta.Parameters.Count > 0)
+            {
+                w.WriteStartObject("parameters");
+                foreach (var kv in meta.Parameters)
+                {
+                    w.WritePropertyName(legacy ? LegacyKeys.Rename(kv.Key) : kv.Key);
+                    ParameterJson.Write(w, kv.Value);
+                }
+                w.WriteEndObject();
+            }
             w.WriteStartArray("drivers");
             foreach (var d in meta.Drivers)
             {
@@ -128,7 +143,7 @@ public static class RunMetaFile
             var drivers = ReadDrivers(r);
 
             return new RunMeta(orf, RecordCodec.Req(r, "id").GetString()!, RecordCodec.Req(r, "runlogSha256").GetString()!,
-                vehicle, setup, notes, segments, drivers);
+                vehicle, setup, notes, segments, drivers) { Parameters = ReadParameters(r, SetupVocabulary.Applies(orf)) };
         }
         catch (FormatException) { throw; }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException or OverflowException)
@@ -163,6 +178,18 @@ public static class RunMetaFile
         result.Sort((a, b) => a.S.CompareTo(b.S));
         for (var i = 1; i < result.Count; i++)
             if (result[i].S < result[i - 1].E) return [];
+        return result;
+    }
+
+    // A malformed entry is ignored on its own; the other entries and the rest of the file still read. Where the
+    // vocabulary governs, a description of a standard key takes the vocabulary's type, unit and scope.
+    private static Dictionary<string, ParameterDescription> ReadParameters(JsonElement root, bool vocabulary)
+    {
+        var result = new Dictionary<string, ParameterDescription>();
+        if (RecordCodec.Opt(root, "parameters") is not { ValueKind: JsonValueKind.Object } obj) return result;
+        foreach (var p in obj.EnumerateObject())
+            if (p.Name.Length > 0 && ParameterJson.TryRead(p.Value) is { } d)
+                result[p.Name] = vocabulary ? ParameterJson.ForKey(p.Name, d) : d;
         return result;
     }
 

@@ -1,0 +1,15 @@
+{
+  "orf": "1.3",
+  "kind": "template",
+  "id": "example-coilover",
+  "version": 1,
+  "name": { "en": "Example with coilovers" },
+  "parameters": {
+    "ride_height": {},
+    "damper_bump": {},
+    "damper_rebound": {},
+    "damper_click_reference": {},
+    "tyres": {}
+  },
+  "damperWays": { "front": 2, "rear": 2 }
+}

@@ -1,0 +1,28 @@
+{
+  "orf": "1.3", "id": "conf-2", "runlogSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "setup": [
+    {
+      "s": 1767225600000000000, "e": 1767226200000000000,
+      "values": {
+        "camber.fl": "-0.05235987755982989",
+        "camber.fr": "-0.05235987755982989",
+        "tyres": "Example tyre 245/30R20",
+        "tyres.ref": "tyre:example-tyre-245-30r20",
+        "x-drive-mode": "sport"
+      }
+    }
+  ],
+  "parameters": {
+    "x-drive-mode": {
+      "name": { "en": "Drive mode", "es": "Modo de conducción" },
+      "type": "choice",
+      "scope": "single",
+      "choices": [
+        { "id": "comfort", "name": { "en": "Comfort", "es": "Confort" } },
+        { "id": "sport", "name": { "en": "Sport" } }
+      ],
+      "allowOther": false,
+      "group": "electronics"
+    }
+  }
+}

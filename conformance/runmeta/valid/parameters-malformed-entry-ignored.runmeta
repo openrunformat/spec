@@ -1,0 +1,8 @@
+{
+  "orf": "1.3", "id": "conf-3", "runlogSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "parameters": {
+    "x-good": { "name": { "en": "Good" }, "type": "decimal", "scope": "wheel", "unit": "Pa", "min": 0, "max": 500000, "precision": 0 },
+    "x-bad-scope": { "name": { "en": "Bad scope" }, "type": "decimal", "scope": "diagonal" },
+    "x-bad-choice": { "name": { "en": "Choice without options" }, "type": "choice", "scope": "single" }
+  }
+}

@@ -1,3 +1,5 @@
+using OpenRunFormat.Setup;
+
 namespace OpenRunFormat.Meta;
 
 /// <summary>
@@ -41,6 +43,12 @@ public sealed record RunMeta(string Orf, string Id, string RunlogSha256,
 {
     /// <summary>Driver intervals; empty when the file has none.</summary>
     public IReadOnlyList<DriverInterval> Drivers { get; init; } = Drivers ?? [];
+
+    /// <summary>
+    /// Descriptions of the setup parameters outside the standard vocabulary, by base key (specification 1.3).
+    /// Empty when the file has none.
+    /// </summary>
+    public IReadOnlyDictionary<string, ParameterDescription> Parameters { get; init; } = new Dictionary<string, ParameterDescription>();
 
     /// <summary>
     /// True when this companion was made for the given .runlog: the run <c>Id</c> must match exactly and the

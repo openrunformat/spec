@@ -1,6 +1,7 @@
-# Open Run Format (ORF) 1.2 — draft
+# Open Run Format (ORF) 1.3 — draft
 
-File extension: `.runlog`. Companion file: `.runmeta`. Specification version: `1.2` (draft, see `CHANGELOG.md`).
+File extension: `.runlog`. Companion file: `.runmeta`. Setup file: `.runsetup`. Specification version: `1.3` (draft, see
+`CHANGELOG.md`).
 
 The key words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119.
 
@@ -350,12 +351,14 @@ are **absolute Unix epoch nanoseconds**, never relative file times and never sam
 | `vehicle` | object | O | Free dictionary of strings |
 | `setup` | array | O | Objects `{ "s": ns, "e": ns, "values": { string: string } }` — a configuration (pressures, modes, tyres...) valid for an interval |
 | `drivers` | array | O | Objects `{ "s": ns, "e": ns, "id": string, "name": string, "initials": string (O) }` — who was driving during the interval. Intervals MUST NOT overlap; a reader that finds overlapping or malformed entries ignores the whole field without rejecting the file. A gap means "no driver recorded". |
+| `parameters` | object | O | Descriptions of setup parameters, by base key (added in 1.3, see section 8.2). A malformed entry is ignored on its own |
 | `notes` | array | O | Objects `{ "t": ns, "text": string }` |
 | `userSegments` | array | O | Segments defined by the user, with the same fields as a `seg` record without `k` (`kind`, `s`, `e`, `src` required) |
 
 A `.runmeta` belongs to a `.runlog` only if its `id` equals the header `id` exactly and its `runlogSha256` equals the
-hash of the file; otherwise a consumer MUST NOT apply it. Unknown fields are ignored. The vocabulary of `vehicle` and
-`setup` keys is free for now and will be specified in later minor versions.
+hash of the file; otherwise a consumer MUST NOT apply it. Unknown fields are ignored. The vocabulary of `vehicle` keys
+is free. The keys of `setup` follow the standard vocabulary of section 8.1 in files with `orf` 1.3 or later; in files
+with `orf` 1.0 to 1.2 they are free text.
 
 `drivers` (added in 1.1): `s` and `e` are absolute epoch nanoseconds with `e > s`, and each interval is half-open
 (`[s, e)`), so adjacent intervals (`e` of one equal to `s` of the next) do not overlap. `id` and `name` are non-empty
@@ -368,6 +371,117 @@ derived from personal data (name, e-mail, account). Consumers use it to tell whe
 person. `name` is personal data: writers SHOULD only include it with the user's consent, and anyone sharing a
 `.runmeta` should remember it contains that name.
 
+### 8.1 Setup vocabulary (added in 1.3)
+
+The standard vocabulary governs the keys of `setup` values **only in files whose `orf` is 1.3 or later** (same major).
+In a file with `orf` 1.0, 1.1 or 1.2 every `setup` key is free text, even one that looks like a standard key: a reader
+MUST NOT reinterpret it (for example, `camber` in a 1.2 file is not an angle in radians, and its value is not converted).
+A writer that rewrites a file whose `orf` is below 1.3 MUST, before writing it as 1.3 or later, convert to the
+vocabulary the keys whose meaning it knows and rename **every other key whose base key does not start with `x-`**,
+whether it collides with the vocabulary or not, to `x-legacy-<key>`, keeping the position suffix and the `.ref`
+companion: for example `camber.fl` becomes `x-legacy-camber.fl`, `tyres.ref` becomes `x-legacy-tyres.ref` and
+`front_pressure` becomes `x-legacy-front_pressure`. Keys that already start with `x-` are kept. The reference library
+converts nothing: it renames every key whose base key does not start with `x-`. A writer MUST NOT write an `orf` lower
+than the one of the file it rewrites; it writes the higher of the two (its own version and the file's), so a file
+written by a later minor version keeps that version.
+The same rules apply to the `values` of a `.runsetup` file (section 11).
+
+**Keys.** A key is a base key, optionally followed by a position suffix:
+
+- per wheel: `.fl`, `.fr`, `.rl`, `.rr` (front left, front right, rear left, rear right);
+- per axle: `.f`, `.r` (front, rear);
+- no suffix for a parameter with a single value.
+
+For example `camber.fl`, `ride_height.r`, `brake_bias`. The scope of each standard key in the table below says which
+form it takes.
+
+**Catalog link.** A value MAY have a companion key `<key>.ref` (after the position suffix, if any) whose value is
+`<catalog>:<id>`, an entry of a **public** catalog the value refers to (for example `"tyres.ref":
+"tyre:example-tyre-245-30r20"`). A writer MUST NOT use `.ref` for identifiers that only make sense to one person or one
+application (a private unit, a local library).
+
+**Non-standard keys.** A key that is not in the vocabulary MUST start with `x-` (for example `x-drive-mode`); only the `x-`
+prefix is required. A writer MUST NOT use a standard key with a different meaning, unit or scope; such a parameter needs its own
+`x-` key. Readers accept any key.
+
+**Values** are always strings. Numeric values are in the SI unit of the table, written in round-trip notation (the
+shortest text that reads back to the same IEEE-754 double) with a dot as decimal separator and no thousands separator,
+for example `"-0.05235987755982989"` or `"220000"`.
+
+| Key | Scope | Unit | Type | Meaning |
+|---|---|---|---|---|
+| `tyre_pressure_cold` | wheel | Pa | decimal | Tyre pressure, cold, gauge (above atmospheric) |
+| `tyre_pressure_hot` | wheel | Pa | decimal | Tyre pressure, hot, gauge |
+| `camber` | wheel | rad | decimal | Camber; negative = top of the wheel inwards |
+| `toe` | wheel | rad | decimal | Toe; positive = toe-in |
+| `caster` | wheel, front wheels only (`.fl`, `.fr`) | rad | decimal | Caster |
+| `ride_height` | axle | m | decimal | Ride height (the measuring point is the vehicle's own) |
+| `spring_rate` | wheel | N/m | decimal | Spring rate |
+| `damper_stiffness` | wheel | — | integer | Clicks of a 1-way damper |
+| `damper_bump`, `damper_rebound` | wheel | — | integer | Clicks of a 2-way damper |
+| `damper_bump_low`, `damper_bump_high` | wheel | — | integer | Clicks of a 3- or 4-way damper, bump |
+| `damper_rebound_low`, `damper_rebound_high` | wheel | — | integer | Clicks of a 4-way damper, rebound (a 3-way damper uses `damper_rebound`) |
+| `damper_click_reference` | single | — | choice | Where damper clicks are counted from: `from_hard` or `from_soft` |
+| `wing_angle` | axle | rad | decimal | Wing angle |
+| `brake_bias` | single | 1 | decimal | Fraction of braking on the front axle, 0 to 1 |
+| `fuel_mass` | single | kg | decimal | Fuel on board |
+| `ballast_mass` | single | kg | decimal | Ballast |
+| `driver_mass` | single | kg | decimal | Mass of the driver (**personal data**, see below) |
+| `tyres` | single | — | text | Tyre model; MAY have a `tyres.ref` link |
+
+That is 21 keys. Damper keys follow the number of adjustment ways of each axle: 1 way `damper_stiffness`; 2 ways
+`damper_bump` and `damper_rebound`; 3 ways `damper_bump_low`, `damper_bump_high` and `damper_rebound`; 4 ways
+`damper_bump_low`, `damper_bump_high`, `damper_rebound_low` and `damper_rebound_high`. What depends on the vehicle
+(maps, modes, anti-roll bars, preload, electronics) is not standard: it uses `x-` keys with a description (section 8.2).
+
+`driver_mass`, and any parameter whose description has `"personal": true`, is personal data: writers SHOULD only
+include its value with the user's consent, and anyone sharing a `.runmeta` or `.runsetup` should remember it contains
+that value.
+
+The list grows with minor versions; adding a key is not a breaking change.
+
+### 8.2 Parameter descriptions (added in 1.3)
+
+`parameters` maps a **base key** (without position or `.ref` suffix) to a description that tells a consumer how to show
+and edit a parameter that is not in the standard vocabulary. Keys of the standard vocabulary need no description.
+
+A key of the standard vocabulary MAY have a description (for example a translated name or limits). Its `type`, `unit`
+and `scope` MUST equal those of the vocabulary (section 8.1), and readers use the vocabulary's: a reader that finds
+different ones ignores those three fields and keeps the rest of the entry. Likewise `choices` and `allowOther` are the
+vocabulary's: for a standard `choice` key (`damper_click_reference`, whose choices are `from_hard` and `from_soft`) a
+description MAY only give names to the vocabulary's choice ids, a reader ignores any other choice and `allowOther` is
+`false`; for any other standard key a reader drops `choices` and `allowOther`. Of a description of a standard key, a
+reader honours only `name`, `min` and `max`, `precision` (only when the standard type is `decimal`), `group`,
+`positions` and the names of the vocabulary's choices; `positions` can only restrict the positions of the vocabulary,
+and a reader drops any position outside them (with none left, the vocabulary's apply). This applies wherever the
+vocabulary governs (`orf` 1.3 or later), also to descriptions in a `.runsetup` file.
+
+| Field | Type | | Meaning |
+|---|---|---|---|
+| `name` | object | R | Name per language tag (for example `{"en": "Drive mode", "es": "Modo de conducción"}`); string values, at least one |
+| `type` | string | R | `text`, `bool`, `choice`, `integer` or `decimal` |
+| `scope` | string | R | `single`, `axle` or `wheel`: which position suffixes the values use (section 8.1) |
+| `unit` | string | O | Unit of the value; SI for numeric values |
+| `choices` | array | O | Options of a `choice`: objects `{ "id": string, "name": { tag: string } }`, `id` non-empty. A `choice` MUST have at least one |
+| `allowOther` | bool | O | For a `choice`: free text is accepted besides the options. Default `false` |
+| `catalogKind` | string | O | For a `text`: the kind of public catalog the value may link to through `<key>.ref` |
+| `min`, `max` | number | O | Limits of a numeric value, in its unit; `min <= max` |
+| `precision` | integer | O | Only for a `decimal`: number of decimals to show, `>= 0` |
+| `group` | string | O | Group id, open list (see below) |
+| `personal` | bool | O | The value is personal data (see section 8.1). Default `false` |
+| `positions` | array | O | Position suffixes that apply when not all of the scope does (for example `["fl", "fr"]`); non-empty strings |
+| `clickReference` | string | O | For dampers: `from_hard` or `from_soft` |
+
+A reader ignores **an entry on its own** (as if absent) when it is not an object, lacks `name`, `type` or `scope`, has a
+field of the wrong JSON type, an empty `name`, an unknown `type` or `scope`, a `choice` without `choices`, a choice
+without `id` or `name`, `min > max`, a `precision` that is negative, not an integer or on a type other than `decimal`,
+or a `clickReference` other than `from_hard` and `from_soft`. The other entries and the rest of the file are still read.
+Unknown fields of a description are ignored.
+
+The standard group ids are `tyres`, `geometry`, `suspension`, `aero`, `brakes`, `electronics`, `mass` and `other`;
+readers MUST accept any string, and an application that does not know a group SHOULD show the parameter under `other`.
+Composition (section 11.5) only looks at `suspension`.
+
 ## 9. Conformance
 
 The directory `conformance/` contains synthetic files that every implementation can use:
@@ -376,8 +490,21 @@ The directory `conformance/` contains synthetic files that every implementation 
   `{"complete": bool, "trailingContent": bool (optional, default false), "channels": {"<id>": <number of samples>}, "segments": n, "kind": "real|sim|synthetic", "derivedFrom": {"id", "s", "e"} | null (optional)}`. A reader
   MUST accept the file and produce those values (`"derivedFrom": null` means the reader reports no `derivedFrom`).
 - `conformance/invalid/*`: a reader MUST reject each file.
-- `conformance/runmeta/valid/<name>.runmeta` with `<name>.expected.json` `{"drivers": n}`: a reader MUST accept the
-  file and produce that number of drivers (an ignored `drivers` field counts as 0).
+- `conformance/runmeta/valid/<name>.runmeta` with `<name>.expected.json` `{"drivers": n, "parameters": n, "setupKeys": n}`
+  (each key optional): a reader MUST accept the file and produce that number of drivers (an ignored `drivers` field
+  counts as 0), of parameter descriptions (ignored entries do not count) and of keys in the `values` of the first
+  `setup` interval. Files named `*-ignored` hold a malformed optional field or entry that a reader ignores; a writer
+  MUST NOT produce them (they do not match the schema). The others match `schema/runmeta.schema.json`.
+- `conformance/runsetup/valid/<name>.runsetup` with `<name>.expected.json`
+  `{"kind": "template|modification|setup", "parameters": n, "values": n, "operations": n (optional)}`: a reader MUST
+  accept the file and produce that kind and those numbers of `parameters` entries, `values` (0 when absent) and
+  `operations`. Each file matches `schema/runsetup.schema.json`.
+- `conformance/runsetup/invalid/*.runsetup`: a reader MUST reject each file (section 11.3).
+- `conformance/compose/<case>/`: a `base.runsetup` template, modifications `mod-1.runsetup`, `mod-2.runsetup`... applied
+  in that order, and `expected.json` `{"parameters": [{"key": string, "positions": [string...] | null}...], "damperWays":
+  {"front": n, "rear": n}, "warnings": n}`. An implementation of the composition (section 11.5) MUST produce those
+  parameters in that order, each with those positions (`null` when all of its scope applies), those final damper ways
+  and that number of warnings. Every file matches `schema/runsetup.schema.json`.
 - `conformance/circuit-ids.json`: lists of valid and invalid circuit identifiers (section 10) and of valid and invalid
   `orf:circuit/` URIs. For each valid entry it gives the circuit part, the variant (or `null`) and whether the id is
   provisional. An implementation of the grammar MUST accept every valid entry with those parts and reject every
@@ -396,8 +523,8 @@ frame (reported as incomplete), and one invalid file for each rule of section 4.
 Plain `.runlog.jsonl` files are the uncompressed form (for reading and for the JSON schema); `valid/compressed.runlog` is
 a real zstd file made of several frames.
 
-`schema/runlog.schema.json` validates **one record** (one line). `schema/runmeta.schema.json` validates a companion file. Rules
-that span records (section 4) are not expressible in the schema.
+`schema/runlog.schema.json` validates **one record** (one line). `schema/runmeta.schema.json` validates a companion file and
+`schema/runsetup.schema.json` a setup file. Rules that span records (section 4) are not expressible in the schema.
 
 The prose of this specification is authoritative. The JSON schemas may be stricter than the text (for example the
 `orf` pattern, `minLength` on some strings, `minimum` on `n` and `dur`). JSON Schema's `integer` also accepts a number
@@ -482,7 +609,140 @@ itself, whichever the origin; a `.runlog` must not need the registry to be under
 When the finish line of the data source and the one of the registry differ, a writer SHOULD record the distance
 between them, in metres, as a decimal string in the header `meta` key `circuit.finish_offset_m`.
 
-## 11. Example
+## 11. Setup files `.runsetup`
+
+A `.runsetup` file (added in 1.3) holds a setup definition that does not belong to any `.runlog`: a **template** (the
+parameters a vehicle has), a **modification** (a package that adds, changes or removes parameters, for example
+coilovers) or a complete **setup** (values someone used). It is the common form to share, import and export them. The
+file is a single UTF-8 JSON object without BOM, not compressed.
+
+### 11.1 Fields
+
+| Field | Type | | Meaning |
+|---|---|---|---|
+| `orf` | string | R | Specification version `major.minor`. Writers MUST write 1.3 or later. Major ≠ 1 → rejected |
+| `kind` | string | R | `template`, `modification` or `setup` |
+| `id` | string | R/O | Non-empty identifier. Required in a template or modification |
+| `version` | integer | R/O | Revision of a template or modification, `>= 1`. Required in a template or modification |
+| `appliesTo` | array | O | Identifiers (non-empty strings) of the vehicle models the file is meant for; absent or empty for a generic file |
+| `name` | object | R | Name per language tag; string values, at least one |
+| `vehicle` | object | O | Free dictionary of strings. Without personal data unless the person agreed |
+| `parameters` | object | O | Parameters by base key, **in order** (section 11.2) |
+| `values` | object | R/O | Setup values, string to string, with the keys and rules of section 8.1. Required in a setup |
+| `damperWays` | object | O | `{ "front": integer, "rear": integer }`: damping adjustment ways (0 to 4) of each axle |
+| `operations` | array | O | In a modification: operations applied in order (section 11.4) |
+| `composition` | object | O | In a setup: `{ "base": ref, "modifications": [ref...] (O, missing = none) }`, the layers it was built from, where `ref` is `{ "id": string, "version": integer }` |
+| `extensions` | object | O | Data of applications, one key per application (for example `x-myapp`), any JSON value |
+
+A **template** has `id`, `version`, its `parameters` and, when the vehicle has adjustable dampers, `damperWays`. A
+**modification** has `id`, `version` and `operations`. A **setup** has `values` and MAY have `parameters` (for example
+the descriptions of its `x-` keys), `damperWays` and `composition`. As in a `.runmeta`, the setup vocabulary of
+section 8.1 governs the keys only when `orf` is 1.3 or later.
+
+### 11.2 Parameters
+
+`parameters` maps a base key to its description (section 8.2). A key of the standard vocabulary used with its standard
+definition has the value `{}` (readers also accept `null`); any other key needs a description, and a standard key MAY
+have one (for example a translated name or limits), with the vocabulary's `type`, `unit` and `scope` (section 8.2).
+For forward compatibility, a reader that finds `{}` or `null` for a base key (a key without position or `.ref` suffix)
+that does not start with `x-` and is not in the vocabulary it knows (for example a key added by a later minor version)
+keeps the parameter, as type `text` and scope `single`, named after the key; `{}` or `null` for a key with a position
+or `.ref` suffix (for example `camber.fl`) is ignored. The order of the entries is the order in which a consumer shows the parameters and the
+order the composition starts from.
+
+### 11.3 Reading
+
+A reader MUST reject the file when the JSON is broken or not an object; `orf` is missing, not a string or has a major
+version other than 1; `kind` is missing, not a string or unknown; `id` is present and not a non-empty string; `version`
+is present and not a positive integer; a template or modification lacks `id` or `version`; a setup lacks `values`;
+`name` is missing, not an object, has a value that is not a string or has no language; `vehicle` or `values` is not an
+object of strings; `appliesTo` is not an array of non-empty strings.
+
+Everything else is tolerated:
+
+- An entry of `parameters` is ignored on its own when its key is empty, its description is malformed (section 8.2), or
+  it is `{}` or `null` for a key that starts with `x-` or has a position or `.ref` suffix. `{}` or `null` for a base key
+  without `x-` that the reader does not know is kept as `text`, `single` (section 11.2). If a key appears twice, it keeps the position of
+  the first and the description of the last.
+- An operation is ignored on its own when it is malformed (section 11.4).
+- A malformed `damperWays` (missing `front` or `rear`, not an integer, outside 0 to 4), `composition` (missing or
+  malformed `base`, `modifications` present and not an array of refs, a ref without a non-empty `id` or a positive `version`) or
+  `extensions` (not an object) is ignored as a whole; so are `parameters` and `operations` of the wrong JSON type.
+
+Readers accept any `orf` 1.y, also lower than 1.3; a writer that rewrites such a file follows the renaming rule of
+section 8.1 for the keys of `values` and `parameters`. A writer MUST NOT write an `orf` lower than the one of the file
+it rewrites; it writes the higher of the two. Unknown fields are ignored and are not kept when a file is rewritten;
+an application keeps its own data in `extensions`, which a writer that rewrites a file SHOULD keep as it is.
+
+### 11.4 Operations
+
+| Operation | Shape |
+|---|---|
+| add | `{ "op": "add", "key": base key, "description": description (O) }` |
+| change | `{ "op": "change", "key": base key, "description": description (O) }` |
+| remove | `{ "op": "remove", "key": base key }` |
+| damperWays | `{ "op": "damperWays", "ways": { "front": integer, "rear": integer } }` |
+
+`description` is required for a key that is not in the standard vocabulary. A reader ignores an operation on its own
+when it is not an object, `op` is missing or unknown, an `add`, `change` or `remove` lacks a non-empty `key`, an `add`
+or `change` has a malformed `description`, or has none for an `x-` key or a key with a position or `.ref` suffix, or a
+`damperWays` lacks a valid `ways`. A
+`"description": null` on an `add` or `change` is treated as absent. A `description` on a `remove` is ignored. As in
+section 11.2, an `add` or `change` without description for a base key without `x-` that the reader does not know is kept,
+with a description of type `text` and scope `single` named after the key.
+
+### 11.5 Composition
+
+Applications compose layers as follows to build the parameters of a vehicle from a base template and modifications.
+The base MUST be a template and each layer a modification.
+
+1. Start with the `parameters` of the base, in order, and its `damperWays` (`{front: 0, rear: 0}` when absent).
+2. Apply the operations of each modification, modifications in the given order and operations in file order:
+   - `add` of an absent key appends it at the end with its description;
+   - `add` of a key that is already present works as a `change` and adds a warning;
+   - `change` replaces the description of a present key and keeps its position;
+   - `remove` removes a present key;
+   - `change` or `remove` of an absent key has no effect and adds a warning;
+   - `damperWays` replaces the damper ways of both axles.
+3. Damper keys (`damper_stiffness`, `damper_bump`, `damper_rebound`, `damper_bump_low`, `damper_bump_high`,
+   `damper_rebound_low`, `damper_rebound_high`) are **derived only from the final damper ways**: any of them that is in
+   the list, from the base or from an explicit `add`, is taken out, and any explicit `remove` of one is overridden,
+   without a warning. Then the keys of the front ways (section 8.1) apply to `fl` and `fr` and the keys of the rear ways
+   to `rl` and `rr`; a key of both axles applies to all four wheels. The front keys come first, then the rear keys not
+   already listed. A derived key keeps the description it had in the list, if any.
+4. The derived keys are placed right after the last suspension parameter: a parameter whose description has group
+   `suspension`, or the key `ride_height`, `spring_rate` or `damper_click_reference`. If there is none, they go at the
+   end.
+
+`damper_click_reference` is not derived: it stays like any other parameter, also with ways `{0, 0}`. The result is a
+list of parameters, the positions of the damper keys and the final damper ways, plus the warnings, which a consumer
+shows to the user; an operation never makes the composition fail. Values are not composed: a setup holds its own
+`values` and MAY record in `composition` the layers it was built from.
+
+For example, with front ways 2 and rear ways 1 the derived keys are `damper_bump` and `damper_rebound` for `fl` and
+`fr` and `damper_stiffness` for `rl` and `rr`, so a setup has values such as `damper_bump.fl` and
+`damper_stiffness.rr`.
+
+A modification for 2-way coilovers:
+
+```json
+{
+  "orf": "1.3",
+  "kind": "modification",
+  "id": "mod-coilover-2way",
+  "version": 1,
+  "name": { "en": "Coilovers, 2-way dampers" },
+  "operations": [
+    { "op": "remove", "key": "x-suspension" },
+    { "op": "add", "key": "ride_height" },
+    { "op": "add", "key": "spring_rate" },
+    { "op": "add", "key": "damper_click_reference" },
+    { "op": "damperWays", "ways": { "front": 2, "rear": 2 } }
+  ]
+}
+```
+
+## 12. Example
 
 ```jsonl
 {"k":"h","orf":"1.0","utc":1767225600000000000,"id":"demo-1","kind":"synthetic"}
