@@ -184,6 +184,21 @@ public class RunSetupComposerTests
     }
 
     [Fact]
+    public void Clave_estandar_sin_descripcion_toma_las_posiciones_del_vocabulario()
+    {
+        var template = GenericStreet() with
+        {
+            Parameters = [new(SetupKeys.Caster, null), new(SetupKeys.Camber, null), new("x-note", Text("Note"))],
+        };
+
+        var composed = RunSetupComposer.Compose(template, []);
+
+        Assert.Equal(["fl", "fr"], composed.Parameters[0].Positions);
+        Assert.Null(composed.Parameters[1].Positions);
+        Assert.Null(composed.Parameters[2].Positions);
+    }
+
+    [Fact]
     public void Capas_de_tipo_incorrecto_lanzan_ArgumentException()
     {
         var setup = new RunSetup(RunFormat.Version, RunSetupKind.Setup, En("S")) { Values = new Dictionary<string, string>() };

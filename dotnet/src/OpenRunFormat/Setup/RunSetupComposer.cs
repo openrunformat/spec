@@ -2,7 +2,8 @@ namespace OpenRunFormat.Setup;
 
 /// <summary>
 /// A parameter of a composed setup. <paramref name="Positions"/> lists the positions that apply when not all of the
-/// scope does (for dampers, the wheels of the axles that have those ways); otherwise it is the description's positions.
+/// scope does (for dampers, the wheels of the axles that have those ways); otherwise it is the description's positions or,
+/// without them, those of the standard vocabulary (for example <c>fl</c>, <c>fr</c> for <c>caster</c>).
 /// </summary>
 public sealed record ComposedParameter(string Key, ParameterDescription? Description, IReadOnlyList<string>? Positions);
 
@@ -83,7 +84,8 @@ public static class RunSetupComposer
         var previous = parameters.Where(p => WaysKeys.Contains(p.Key)).ToDictionary(p => p.Key, p => p.Value);
         var result = parameters
             .Where(p => !WaysKeys.Contains(p.Key))
-            .Select(p => new ComposedParameter(p.Key, p.Value, p.Value?.Positions))
+            .Select(p => new ComposedParameter(p.Key, p.Value,
+                p.Value?.Positions ?? SetupVocabulary.Standard.GetValueOrDefault(p.Key)?.Positions))
             .ToList();
 
         var front = SetupVocabulary.DamperKeys(ways.Front);
