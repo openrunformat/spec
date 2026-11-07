@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/openrunformat/spec/main/schema/runsetup.schema.json",
+  "title": "Open Run Format setup file (.runsetup)",
+  "description": "A template, a modification or a complete setup, independent of any .runlog. Values are strings; numeric values are in SI units. Unknown fields are allowed.",
+  "type": "object",
+  "required": ["orf", "kind", "name"],
+  "properties": {
+    "orf": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
+    "kind": { "enum": ["template", "modification", "setup"] },
+    "id": { "type": "string", "minLength": 1 },
+    "version": { "type": "integer", "minimum": 1 },
+    "appliesTo": {
+      "description": "Registry model ids the file is meant for; empty or absent for a generic one.",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "name": { "$ref": "#/$defs/names" },
+    "vehicle": { "type": "object", "additionalProperties": { "type": "string" } },
+    "parameters": {
+      "description": "Parameters by base key, in order. {} or null is a standard key used with its standard definition; any other key needs a description. A malformed entry is ignored by readers.",
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "null" },
+          { "type": "object", "maxProperties": 0 },
+          { "$ref": "#/$defs/description" }
+        ]
+      }
+    },
+    "values": { "type": "object", "additionalProperties": { "type": "string" } },
+    "damperWays": { "$ref": "#/$defs/damperWays" },
+    "operations": {
+      "description": "Operations of a modification, applied in order. A malformed operation is ignored by readers.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["op"],
+        "properties": {
+          "op": { "enum": ["add", "change", "remove", "damperWays"] },
+          "key": { "type": "string", "minLength": 1 },
+          "description": { "$ref": "#/$defs/description" },
+          "ways": { "$ref": "#/$defs/damperWays" }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "op": { "enum": ["add", "change", "remove"] } } },
+            "then": { "required": ["key"] }
+          },
+          {
+            "if": { "properties": { "op": { "const": "damperWays" } } },
+            "then": { "required": ["ways"] }
+          }
+        ]
+      }
+    },
+    "composition": {
+      "description": "For a setup: the base template and the modifications it was built from, in order.",
+      "type": "object",
+      "required": ["base"],
+      "properties": {
+        "base": { "$ref": "#/$defs/layerRef" },
+        "modifications": { "type": "array", "items": { "$ref": "#/$defs/layerRef" } }
+      }
+    },
+    "extensions": {
+      "description": "Application data, by application key (for example x-example).",
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "enum": ["template", "modification"] } } },
+      "then": { "required": ["id", "version"] }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "setup" } } },
+      "then": { "required": ["values"] }
+    }
+  ],
+  "$defs": {
+    "names": { "type": "object", "minProperties": 1, "additionalProperties": { "type": "string" } },
+    "damperWays": {
+      "type": "object",
+      "required": ["front", "rear"],
+      "properties": {
+        "front": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "rear": { "type": "integer", "minimum": 0, "maximum": 4 }
+      }
+    },
+    "layerRef": {
+      "type": "object",
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "description": {
+      "description": "Same as a description in the parameters of a .runmeta.",
+      "type": "object",
+      "required": ["name", "type", "scope"],
+      "properties": {
+        "name": { "$ref": "#/$defs/names" },
+        "type": { "enum": ["text", "bool", "choice", "integer", "decimal"] },
+        "scope": { "enum": ["single", "axle", "wheel"] },
+        "unit": { "type": "string" },
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "name": { "$ref": "#/$defs/names" }
+            }
+          }
+        },
+        "allowOther": { "type": "boolean" },
+        "catalogKind": { "type": "string" },
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "precision": { "type": "integer", "minimum": 0 },
+        "group": { "type": "string" },
+        "personal": { "type": "boolean" },
+        "positions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "clickReference": { "enum": ["from_hard", "from_soft"] }
+      }
+    }
+  }
+}

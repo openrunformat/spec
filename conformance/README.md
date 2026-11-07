@@ -8,6 +8,10 @@ Files a reader of Open Run Format can test itself against.
 - `invalid/`: each file must be rejected.
 - `runmeta/valid/`: each `*.runmeta` must be read without errors; its `*.expected.json` gives the number of driver
   intervals a reader must report (`{"drivers": n}`; an ignored field counts 0), see SPEC §8.
+- `runsetup/valid/`: each `*.runsetup` must be read without errors and match `schema/runsetup.schema.json`; its
+  `*.expected.json` gives the `kind` and the number of `parameters`, `values` (0 when absent) and, when present,
+  `operations` a reader must report.
+- `runsetup/invalid/`: each `*.runsetup` must be rejected.
 - `circuit-ids.json`: valid and invalid circuit identifiers (SPEC §10).
 
 All the data in these files is invented: coordinates around 40.0, -3.0, round timestamps and made-up device names. Some

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using OpenRunFormat.Meta;
+using OpenRunFormat.Setup;
 using Json.Schema;
 
 namespace OpenRunFormat.Tests;
@@ -8,6 +9,12 @@ public class ConformanceTests
 {
     private static readonly Lazy<JsonSchema> RunlogSchema = new(() =>
         JsonSchema.FromText(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "schema", "runlog.schema.json"))));
+
+    private static readonly Lazy<JsonSchema> RunmetaSchema = new(() =>
+        JsonSchema.FromText(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "schema", "runmeta.schema.json"))));
+
+    private static readonly Lazy<JsonSchema> RunsetupSchema = new(() =>
+        JsonSchema.FromText(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "schema", "runsetup.schema.json"))));
 
     private static string Root => Path.Combine(AppContext.BaseDirectory, "conformance");
 
@@ -95,10 +102,19 @@ public class ConformanceTests
         }
     }
 
-    public static IEnumerable<TheoryDataRow<string>> ValidRunmetaFiles()
+    public static IEnumerable<TheoryDataRow<string>> ValidRunmetaFiles() => FilesIn(Path.Combine("runmeta", "valid"), "*.runmeta");
+
+    // Files named "*-ignored" hold a malformed optional field that a reader ignores; a writer must not produce them.
+    public static IEnumerable<TheoryDataRow<string>> SchemaValidRunmetaFiles() =>
+        FilesIn(Path.Combine("runmeta", "valid"), "*.runmeta", f => !f.Contains("-ignored"));
+
+    public static IEnumerable<TheoryDataRow<string>> ValidRunsetupFiles() => FilesIn(Path.Combine("runsetup", "valid"), "*.runsetup");
+    public static IEnumerable<TheoryDataRow<string>> InvalidRunsetupFiles() => FilesIn(Path.Combine("runsetup", "invalid"), "*.runsetup");
+
+    private static IEnumerable<TheoryDataRow<string>> FilesIn(string dir, string pattern, Func<string, bool>? filter = null)
     {
-        var path = Path.Combine(Root, "runmeta", "valid");
-        var files = Directory.Exists(path) ? Directory.GetFiles(path, "*.runmeta") : [];
+        var path = Path.Combine(Root, dir);
+        var files = Directory.Exists(path) ? Directory.GetFiles(path, pattern).Where(filter ?? (_ => true)) : [];
         var any = false;
         foreach (var f in files.OrderBy(f => f, StringComparer.Ordinal)) { any = true; yield return new TheoryDataRow<string>(Path.GetFileName(f)); }
         if (!any) yield return new TheoryDataRow<string>("<no conformance files found>");
@@ -116,6 +132,52 @@ public class ConformanceTests
         if (expected.TryGetProperty("drivers", out var ed)) Assert.Equal(ed.GetInt32(), meta.Drivers.Count);
         if (expected.TryGetProperty("parameters", out var ep)) Assert.Equal(ep.GetInt32(), meta.Parameters.Count);
         if (expected.TryGetProperty("setupKeys", out var ek)) Assert.Equal(ek.GetInt32(), meta.Setup[0].Values.Count);
+    }
+
+    [Theory]
+    [MemberData(nameof(SchemaValidRunmetaFiles))]
+    public void Runmeta_valid_cumple_el_esquema(string name)
+    {
+        using var json = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "runmeta", "valid", name)));
+        Assert.True(RunmetaSchema.Value.Evaluate(json.RootElement).IsValid, $"{name} does not match the schema.");
+    }
+
+    [Theory]
+    [MemberData(nameof(ValidRunsetupFiles))]
+    public void Runsetup_valid_cumple_expected_y_esquema(string name)
+    {
+        var path = Path.Combine(Root, "runsetup", "valid", name);
+        var expected = JsonDocument.Parse(File.ReadAllText(Path.ChangeExtension(path, ".expected.json"))).RootElement;
+
+        var setup = RunSetupFile.Read(path);
+
+        Assert.Equal(expected.GetProperty("kind").GetString(), setup.Kind.ToString().ToLowerInvariant());
+        Assert.Equal(expected.GetProperty("parameters").GetInt32(), setup.Parameters.Count);
+        Assert.Equal(expected.GetProperty("values").GetInt32(), setup.Values?.Count ?? 0);
+        if (expected.TryGetProperty("operations", out var eo)) Assert.Equal(eo.GetInt32(), setup.Operations.Count);
+        using var json = JsonDocument.Parse(File.ReadAllText(path));
+        Assert.True(RunsetupSchema.Value.Evaluate(json.RootElement).IsValid, $"{name} does not match the schema.");
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidRunsetupFiles))]
+    public void Runsetup_invalid_se_rechaza(string name)
+    {
+        var path = Path.Combine(Root, "runsetup", "invalid", name);
+        Assert.Throws<FormatException>(() => RunSetupFile.Read(path));
+    }
+
+    [Theory]
+    [InlineData("""{"orf":"1.3","kind":"template","name":{"en":"A"}}""")]
+    [InlineData("""{"orf":"1.3","kind":"setup","name":{"en":"A"}}""")]
+    [InlineData("""{"orf":"1.3","kind":"profile","name":{"en":"A"},"values":{}}""")]
+    [InlineData("""{"orf":"1.3","kind":"setup","name":{},"values":{}}""")]
+    [InlineData("""{"orf":"1.3","kind":"setup","name":{"en":"A"},"values":{},"damperWays":{"front":5,"rear":0}}""")]
+    [InlineData("""{"orf":"1.3","kind":"modification","id":"m","version":1,"name":{"en":"A"},"operations":[{"op":"rename","key":"x"}]}""")]
+    public void Esquema_runsetup_rechaza_ficheros_mal_formados(string text)
+    {
+        using var json = JsonDocument.Parse(text);
+        Assert.False(RunsetupSchema.Value.Evaluate(json.RootElement).IsValid);
     }
 
     [Theory]

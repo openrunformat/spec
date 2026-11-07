@@ -1,0 +1,35 @@
+{
+  "orf": "1.3",
+  "kind": "setup",
+  "name": { "en": "Track day, dry" },
+  "vehicle": { "model": "Example hatchback" },
+  "parameters": {
+    "tyre_pressure_cold": {},
+    "camber": {},
+    "ride_height": {},
+    "damper_bump": {},
+    "damper_rebound": {},
+    "x-note": { "name": { "en": "Note" }, "type": "text", "scope": "single" }
+  },
+  "values": {
+    "tyre_pressure_cold.fl": "210000",
+    "tyre_pressure_cold.fr": "210000",
+    "tyre_pressure_cold.rl": "200000",
+    "tyre_pressure_cold.rr": "200000",
+    "camber.fl": "-0.03490658503988659",
+    "camber.fr": "-0.03490658503988659",
+    "ride_height.f": "0.115",
+    "ride_height.r": "0.12",
+    "damper_bump.fl": "8",
+    "damper_bump.fr": "8",
+    "damper_rebound.rl": "10",
+    "damper_rebound.rr": "10",
+    "x-note": "Dry, 20 °C"
+  },
+  "damperWays": { "front": 2, "rear": 2 },
+  "composition": {
+    "base": { "id": "generic-street", "version": 1 },
+    "modifications": [ { "id": "mod-coilover-2way", "version": 1 } ]
+  },
+  "extensions": { "x-example": { "levels": { "camber": "base" } } }
+}
