@@ -324,6 +324,21 @@ public class RunSetupTests : IDisposable
     }
 
     [Fact]
+    public void Reescribir_runsetup_1_4_conserva_la_version()
+    {
+        var future = RunSetupFile.Parse("""{"orf":"1.4","kind":"setup","name":{"en":"S"},"values":{"camber.fl":"-0.03"}}""");
+        var path = Path.Combine(_dir, "future.runsetup");
+
+        RunSetupFile.Write(path, future);
+        var read = RunSetupFile.Read(path);
+
+        Assert.Equal("1.4", read.Orf);
+        Assert.Equal("-0.03", read.Values!["camber.fl"]);
+        Assert.Equal("1.4", RunSetupFile.Parse(RunSetupFile.Serialize(future)).Orf);
+        Assert.Equal(RunFormat.Version, RunSetupFile.Parse(RunSetupFile.Serialize(future with { Orf = "2.1" })).Orf);
+    }
+
+    [Fact]
     public void Write_fuerza_orf_actual()
     {
         var path = Path.Combine(_dir, "s.runsetup");

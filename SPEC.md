@@ -381,7 +381,9 @@ vocabulary the keys whose meaning it knows and rename **every other key whose ba
 whether it collides with the vocabulary or not, to `x-legacy-<key>`, keeping the position suffix and the `.ref`
 companion: for example `camber.fl` becomes `x-legacy-camber.fl`, `tyres.ref` becomes `x-legacy-tyres.ref` and
 `front_pressure` becomes `x-legacy-front_pressure`. Keys that already start with `x-` are kept. The reference library
-converts nothing: it renames every key whose base key does not start with `x-`.
+converts nothing: it renames every key whose base key does not start with `x-`. A writer MUST NOT write an `orf` lower
+than the one of the file it rewrites; it writes the higher of the two (its own version and the file's), so a file
+written by a later minor version keeps that version.
 The same rules apply to the `values` of a `.runsetup` file (section 11).
 
 **Keys.** A key is a base key, optionally followed by a position suffix:
@@ -650,7 +652,8 @@ Everything else is tolerated:
   `extensions` (not an object) is ignored as a whole; so are `parameters` and `operations` of the wrong JSON type.
 
 Readers accept any `orf` 1.y, also lower than 1.3; a writer that rewrites such a file follows the renaming rule of
-section 8.1 for the keys of `values` and `parameters`. Unknown fields are ignored and are not kept when a file is rewritten;
+section 8.1 for the keys of `values` and `parameters`. A writer MUST NOT write an `orf` lower than the one of the file
+it rewrites; it writes the higher of the two. Unknown fields are ignored and are not kept when a file is rewritten;
 an application keeps its own data in `extensions`, which a writer that rewrites a file SHOULD keep as it is.
 
 ### 11.4 Operations

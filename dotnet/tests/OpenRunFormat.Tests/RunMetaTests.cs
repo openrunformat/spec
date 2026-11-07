@@ -241,6 +241,25 @@ public class RunMetaTests : IDisposable
         Assert.Equal("1.7", RunMetaFile.Read(future).Orf);
     }
 
+    [Fact]
+    public void Reescribir_runmeta_1_4_conserva_la_version()
+    {
+        var path = Path.Combine(_dir, "future.runmeta");
+        RunMetaFile.Write(path, Sample() with { Orf = "1.4" });
+        Assert.Equal("1.4", RunMetaFile.Read(path).Orf);
+
+        RunMetaFile.Write(path, Sample() with { Orf = "1.12" });
+        Assert.Equal("1.12", RunMetaFile.Read(path).Orf);
+
+        // Never lower than the version of the library, nor another major.
+        RunMetaFile.Write(path, Sample() with { Orf = "1.1" });
+        Assert.Equal(RunFormat.Version, RunMetaFile.Read(path).Orf);
+        RunMetaFile.Write(path, Sample() with { Orf = "2.0" });
+        Assert.Equal(RunFormat.Version, RunMetaFile.Read(path).Orf);
+        RunMetaFile.Write(path, Sample() with { Orf = "abc" });
+        Assert.Equal(RunFormat.Version, RunMetaFile.Read(path).Orf);
+    }
+
     private static RunMeta WithValues(string orf, Dictionary<string, string> values) =>
         Sample() with { Orf = orf, Setup = [new SetupInterval(100, 200, values)] };
 

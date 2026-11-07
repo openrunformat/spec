@@ -21,7 +21,8 @@ public static class RunSetupFile
     };
 
     /// <summary>
-    /// Writes the file. <c>Orf</c> is forced to <see cref="RunFormat.Version"/>; when the file is older than 1.3, every key of
+    /// Writes the file. <c>Orf</c> is written as the higher of the object's <c>Orf</c> and <see cref="RunFormat.Version"/>
+    /// (a rewrite never lowers the version, specification §11.3); when the file is older than 1.3, every key of
     /// <c>values</c> and <c>parameters</c> whose base key does not start with <c>x-</c> is written as
     /// <c>x-legacy-&lt;key&gt;</c> (specification §8.1), without converting values. The write is atomic: a temporary file in
     /// the same directory is flushed to disk and moved over the target; on failure an existing target is untouched.
@@ -34,7 +35,7 @@ public static class RunSetupFile
         AtomicFile.Write(path, fs => fs.Write(bytes));
     }
 
-    /// <summary>The JSON text of a file, with <c>orf</c> forced to <see cref="RunFormat.Version"/> (keys renamed as in <see cref="Write"/>).</summary>
+    /// <summary>The JSON text of a file, with <c>orf</c> and keys as in <see cref="Write"/>.</summary>
     public static string Serialize(RunSetup setup)
     {
         ArgumentNullException.ThrowIfNull(setup);
@@ -53,7 +54,7 @@ public static class RunSetupFile
         using (var w = new Utf8JsonWriter(ms, WriterOptions))
         {
             w.WriteStartObject();
-            w.WriteString("orf", RunFormat.Version);
+            w.WriteString("orf", RunFormat.RewriteVersion(s.Orf));
             w.WriteString("kind", KindText(s.Kind));
             if (s.Id is not null) w.WriteString("id", s.Id);
             if (s.Version is { } version) w.WriteNumber("version", version);

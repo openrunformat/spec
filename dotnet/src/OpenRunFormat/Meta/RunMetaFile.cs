@@ -21,7 +21,8 @@ public static class RunMetaFile
     };
 
     /// <summary>
-/// Writes the companion. <c>Orf</c> is forced to <see cref="RunFormat.Version"/>; when the companion is older than 1.3,
+/// Writes the companion. <c>Orf</c> is written as the higher of <c>meta.Orf</c> and <see cref="RunFormat.Version"/> (a
+/// rewrite never lowers the version, specification §8.1); when the companion is older than 1.3,
 /// every setup key (and parameter key) whose base key does not start with <c>x-</c> is written as <c>x-legacy-&lt;key&gt;</c>
 /// (specification §8.1), without converting values. The write is atomic: a temporary
 /// file in the same directory is flushed to disk and moved over the target; on failure an existing target is untouched.
@@ -35,7 +36,7 @@ public static class RunMetaFile
         using (var w = new Utf8JsonWriter(ms, WriterOptions))
         {
             w.WriteStartObject();
-            w.WriteString("orf", RunFormat.Version);
+            w.WriteString("orf", RunFormat.RewriteVersion(meta.Orf));
             w.WriteString("id", meta.Id);
             w.WriteString("runlogSha256", meta.RunlogSha256);
             w.WriteStartObject("vehicle");
