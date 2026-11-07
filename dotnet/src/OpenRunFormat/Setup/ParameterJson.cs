@@ -84,6 +84,7 @@ internal static class ParameterJson
             || !Bool(e, "allowOther", out var allowOther) || !Bool(e, "personal", out var personal)
             || !Num(e, "min", out var min) || !Num(e, "max", out var max)) return null;
         if (min > max) return null;
+        if (click is not (null or "from_hard" or "from_soft")) return null;
 
         int? precision = null;
         if (e.TryGetProperty("precision", out var pEl))

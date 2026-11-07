@@ -331,6 +331,7 @@ public class RunMetaTests : IDisposable
     [InlineData("""{"name":{"en":"A"},"type":"decimal","scope":"single","min":5,"max":1}""")]
     [InlineData("""{"name":{"en":"A"},"type":"decimal","scope":"single","precision":"2"}""")]
     [InlineData("""{"name":{"en":"A"},"type":"decimal","scope":"single","unit":3}""")]
+    [InlineData("""{"name":{"en":"A"},"type":"integer","scope":"wheel","clickReference":"from_middle"}""")]
     public void Parameters_reglas_de_entrada_mal_formada(string entry)
     {
         var path = WriteRaw(_dir, RawWithParameters("{\"bad\":" + entry + ",\"ok\":{\"name\":{\"en\":\"A\"},\"type\":\"text\",\"scope\":\"single\"}}"));
