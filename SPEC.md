@@ -625,7 +625,9 @@ section 8.1 governs the keys only when `orf` is 1.3 or later.
 
 `parameters` maps a base key to its description (section 8.2). A key of the standard vocabulary used with its standard
 definition has the value `{}` (readers also accept `null`); any other key needs a description, and a standard key MAY
-have one (for example a translated name or limits). The order of the entries is the order in which a consumer shows the
+have one (for example a translated name or limits). For forward compatibility, a reader that finds `{}` or `null` for a
+key that does not start with `x-` and is not in the vocabulary it knows (for example a key added by a later minor
+version) keeps the parameter, as type `text` and scope `single`, named after the key. The order of the entries is the order in which a consumer shows the
 parameters and the order the composition starts from.
 
 ### 11.3 Reading
@@ -639,7 +641,8 @@ object of strings; `appliesTo` is not an array of non-empty strings.
 Everything else is tolerated:
 
 - An entry of `parameters` is ignored on its own when its key is empty, its description is malformed (section 8.2), or
-  it is `{}` or `null` for a key that is not in the standard vocabulary. If a key appears twice, it keeps the position of
+  it is `{}` or `null` for a key that starts with `x-`. `{}` or `null` for a key without `x-` that the reader does not
+  know is kept as `text`, `single` (section 11.2). If a key appears twice, it keeps the position of
   the first and the description of the last.
 - An operation is ignored on its own when it is malformed (section 11.4).
 - A malformed `damperWays` (missing `front` or `rear`, not an integer, outside 0 to 4), `composition` (missing or
@@ -661,8 +664,10 @@ an application keeps its own data in `extensions`, which a writer that rewrites 
 
 `description` is required for a key that is not in the standard vocabulary. A reader ignores an operation on its own
 when it is not an object, `op` is missing or unknown, an `add`, `change` or `remove` lacks a non-empty `key`, an `add`
-or `change` has a malformed `description` or a non-standard key without one, or a `damperWays` lacks a valid `ways`. A
-`"description": null` on an `add` or `change` is treated as absent. A `description` on a `remove` is ignored.
+or `change` has a malformed `description` or an `x-` key without one, or a `damperWays` lacks a valid `ways`. A
+`"description": null` on an `add` or `change` is treated as absent. A `description` on a `remove` is ignored. As in
+section 11.2, an `add` or `change` without description for a key without `x-` that the reader does not know is kept,
+with a description of type `text` and scope `single` named after the key.
 
 ### 11.5 Composition
 

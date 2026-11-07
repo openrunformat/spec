@@ -198,6 +198,46 @@ public class RunSetupTests : IDisposable
     }
 
     [Fact]
+    public void Clave_estandar_desconocida_se_conserva_como_texto()
+    {
+        // A key added to the vocabulary by a later minor version is unknown here: it is kept as single-valued text.
+        var template = RunSetupFile.Parse("""
+            {
+              "orf": "1.4", "kind": "template", "id": "t", "version": 1, "name": {"en": "T"},
+              "parameters": { "camber": {}, "anti_dive": {}, "rake": null, "x-a": {} }
+            }
+            """);
+
+        Assert.Equal(["camber", "anti_dive", "rake"], template.Parameters.Select(p => p.Key));
+        Assert.Null(template.Parameters[0].Value);
+        foreach (var (key, d) in template.Parameters.Skip(1))
+        {
+            Assert.Equal("text", d!.Type);
+            Assert.Equal(SetupScope.Single, d.Scope);
+            Assert.Equal(key, d.Name["en"]);
+            Assert.Null(d.Positions);
+        }
+
+        var mod = RunSetupFile.Parse("""
+            {
+              "orf": "1.4", "kind": "modification", "id": "m", "version": 1, "name": {"en": "M"},
+              "operations": [
+                {"op": "add", "key": "anti_dive"},
+                {"op": "change", "key": "rake", "description": null},
+                {"op": "add", "key": "x-a"},
+                {"op": "add", "key": "camber"}
+              ]
+            }
+            """);
+
+        Assert.Equal(["anti_dive", "rake", "camber"], mod.Operations.Select(o => o.Key));
+        Assert.Equal("text", mod.Operations[0].Description!.Type);
+        Assert.Equal(SetupScope.Single, mod.Operations[0].Description!.Scope);
+        Assert.Equal("rake", mod.Operations[1].Description!.Name["en"]);
+        Assert.Null(mod.Operations[2].Description);
+    }
+
+    [Fact]
     public void Campos_opcionales_mal_formados_se_ignoran()
     {
         var read = RunSetupFile.Parse("""

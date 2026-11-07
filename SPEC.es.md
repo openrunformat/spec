@@ -152,7 +152,10 @@ desconocidos se ignoran y no se conservan).
 
 Se rechaza el fichero si el JSON está roto, falta `orf` o su mayor no es 1, falta o es desconocido `kind`, `id` está vacío, `version` no es un
 entero positivo, una plantilla o modificación no tiene `id` o `version`, un `setup` no tiene `values`, `name` no tiene idiomas, o `vehicle`, `values` o
-`appliesTo` no son cadenas. Una entrada de `parameters` o una operación mal formadas se ignoran solas; un `damperWays`,
+`appliesTo` no son cadenas. Una entrada de `parameters` o una operación mal formadas se ignoran solas; por
+compatibilidad hacia delante, `{}`/`null` en `parameters`, o un `add`/`change` sin descripción, para una clave sin `x-`
+que el lector no conoce (p. ej. añadida en una versión menor posterior) se conserva como parámetro `text` de ámbito
+`single` con la clave por nombre (para una clave `x-` se ignora); un `damperWays`,
 `composition` o `extensions` mal formado se ignora entero. Al reescribir un fichero anterior a 1.3 se aplica el
 renombrado `x-legacy-` a las claves de `values` y `parameters`.
 

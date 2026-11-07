@@ -281,8 +281,9 @@ public static class RunSetupFile
         return result;
     }
 
-    // `{}` or null is a standard key without description; anything else must be a valid description. A key outside the
-    // standard vocabulary needs a description. Repeated keys keep the first position and the last description.
+    // `{}` or null is a standard key without description; anything else must be a valid description. An x- key needs a
+    // description; any other key this reader does not know (added by a later minor version) is kept as single-valued
+    // text. Repeated keys keep the first position and the last description.
     private static List<KeyValuePair<string, ParameterDescription?>> ReadParameters(JsonElement root)
     {
         var result = new List<KeyValuePair<string, ParameterDescription?>>();
@@ -294,8 +295,8 @@ public static class RunSetupFile
             if (p.Value.ValueKind == JsonValueKind.Null
                 || (p.Value.ValueKind == JsonValueKind.Object && !p.Value.EnumerateObject().Any()))
             {
-                if (!SetupVocabulary.IsStandard(p.Name)) continue;
-                description = null;
+                if (SetupVocabulary.IsCustom(p.Name)) continue;
+                description = SetupVocabulary.IsStandard(p.Name) ? null : UnknownKeyDescription(p.Name);
             }
             else if (ParameterJson.TryRead(p.Value) is { } d) description = d;
             else continue;
@@ -344,9 +345,14 @@ public static class RunSetupFile
             description = ParameterJson.TryRead(dEl);
             if (description is null) return null;
         }
-        if (description is null && !SetupVocabulary.IsStandard(key)) return null;
+        if (description is null && SetupVocabulary.IsCustom(key)) return null;
+        if (description is null && !SetupVocabulary.IsStandard(key)) description = UnknownKeyDescription(key);
         return new SetupOperation(kind, key, description);
     }
+
+    // A key without x- that is not in the vocabulary this reader knows (specification §11.2).
+    private static ParameterDescription UnknownKeyDescription(string key) =>
+        new(new Dictionary<string, string> { ["en"] = key }, "text", SetupScope.Single);
 
     private static DamperWays? ReadWays(JsonElement e)
     {

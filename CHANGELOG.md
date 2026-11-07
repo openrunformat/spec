@@ -8,7 +8,8 @@
   every other key whose base key does not start with `x-` to `x-legacy-<key>`. `driver_mass` and parameters marked `personal` are personal data. The
   `.runmeta` gains `parameters` (section 8.2), descriptions of setup parameters with an open list of groups; a reader
   ignores a malformed entry on its own. New section 11: setup files `.runsetup` (template, modification, setup), their
-  operations and the composition rule; damper keys derive only from the final damper ways. The example moves to
+  operations and the composition rule; damper keys derive only from the final damper ways; a key without `x-` that a reader does not know, with `{}`/`null`
+  or without description in an operation, is kept as single-valued text (forward compatibility). The example moves to
   section 12. `expected.json` of `runmeta/valid` accepts `parameters` and `setupKeys`, and `conformance/runsetup/` is
   new (section 9).
 - Schema: `parameters` in `runmeta.schema.json`; new `runsetup.schema.json`.
