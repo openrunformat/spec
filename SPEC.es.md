@@ -102,10 +102,13 @@ personal: los escritores DEBERÍAN incluirlo solo con el consentimiento del usua
 
 Vocabulario de `setup` (1.3, SPEC §8.1): **solo rige si `orf` es 1.3 o posterior**. En un fichero 1.0–1.2 todas las
 claves de `setup` son texto libre y NO DEBEN reinterpretarse (un `camber` de un fichero 1.2 no son radianes ni se
-convierte). Una clave es una clave base con sufijo de posición opcional: por rueda `.fl`, `.fr`, `.rl`, `.rr`; por eje
+convierte). Un escritor que reescribe un fichero con `orf` anterior a 1.3 DEBE, antes de escribirlo como 1.3 o
+posterior, o bien convertir al vocabulario las claves cuyo significado conoce, o bien renombrar toda clave que choque con
+el vocabulario a `x-legacy-<clave>`, conservando el sufijo de posición y la compañera `.ref` (`camber.fl` pasa a
+`x-legacy-camber.fl`); la biblioteca de referencia renombra y nunca convierte. Una clave es una clave base con sufijo de posición opcional: por rueda `.fl`, `.fr`, `.rl`, `.rr`; por eje
 `.f`, `.r`; sin sufijo si el valor es único. La clave compañera `<clave>.ref` vale `<catálogo>:<id>` y solo enlaza a
 catálogos **públicos**, nunca a ids de unidades privadas ni de bibliotecas locales. Una clave fuera del vocabulario DEBE
-empezar por `x-` y no puede usar una clave estándar con otro significado, unidad o ámbito. Los valores son siempre
+empezar por `x-`, y un escritor NO DEBE usar una clave estándar con otro significado, unidad o ámbito. Los valores son siempre
 cadenas; los numéricos en SI, en notación de ida y vuelta y con punto decimal. Las 21 claves estándar:
 
 | Clave | Ámbito | Unidad | Tipo |
@@ -128,7 +131,9 @@ incluirlo solo con el consentimiento del usuario.
 `parameters` (1.3, SPEC §8.2): objeto clave base → descripción `{name, type, scope, unit?, choices?, allowOther?,
 catalogKind?, min?, max?, precision?, group?, personal?, positions?, clickReference?}` para las claves no estándar (las
 estándar no la necesitan). `type`: `text`, `bool`, `choice`, `integer`, `decimal`; `scope`: `single`, `axle`, `wheel`;
-`group`: `tyres`, `geometry`, `suspension`, `aero`, `brakes`, `electronics`, `mass`, `other`. Un lector ignora **solo la
+`group` es una lista abierta: los ids estándar son `tyres`, `geometry`, `suspension`, `aero`, `brakes`, `electronics`,
+`mass` y `other`; un lector DEBE aceptar cualquier cadena y una aplicación que no conoce un grupo DEBERÍA mostrar el
+parámetro en `other` (la composición solo mira `suspension`). Un lector ignora **solo la
 entrada** mal formada (falta `name`, `type` o `scope`, tipo JSON erróneo, `choice` sin opciones, `min > max`,
 `precision` fuera de `decimal`, `clickReference` desconocido...); el resto de entradas y del fichero se lee igual.
 
@@ -141,22 +146,24 @@ posterior; se aceptan menores anteriores), `kind`, `id` y `version` (obligatorio
 `appliesTo` (ids de modelo; vacío = genérico), `name` (por idioma), `vehicle`, `parameters` (en orden; `{}` para una
 clave estándar con su definición estándar, descripción para las demás), `values` (obligatorio en `setup`),
 `damperWays` (`{front, rear}`, 0–4), `operations`, `composition` (`{base, modifications}` con referencias `{id,
-version}`) y `extensions` (un objeto por aplicación, p. ej. `x-myapp`, que se conserva al reescribir; los campos
+version}`; sin `modifications` = ninguna) y `extensions` (un objeto por aplicación, p. ej. `x-myapp`, que se conserva al reescribir; los campos
 desconocidos se ignoran y no se conservan).
 
-Se rechaza el fichero si el JSON está roto, falta `orf` o su mayor no es 1, falta o es desconocido `kind`, una plantilla o
-modificación no tiene `id` o `version`, un `setup` no tiene `values`, `name` no tiene idiomas, o `vehicle`, `values` o
+Se rechaza el fichero si el JSON está roto, falta `orf` o su mayor no es 1, falta o es desconocido `kind`, `id` está vacío, `version` no es un
+entero positivo, una plantilla o modificación no tiene `id` o `version`, un `setup` no tiene `values`, `name` no tiene idiomas, o `vehicle`, `values` o
 `appliesTo` no son cadenas. Una entrada de `parameters` o una operación mal formadas se ignoran solas; un `damperWays`,
-`composition` o `extensions` mal formado se ignora entero.
+`composition` o `extensions` mal formado se ignora entero. Al reescribir un fichero anterior a 1.3 se aplica el
+renombrado `x-legacy-` a las claves de `values` y `parameters`.
 
 Operaciones: `{"op":"add"|"change","key","description"?}`, `{"op":"remove","key"}` y
-`{"op":"damperWays","ways":{"front","rear"}}`; una clave no estándar necesita `description`. **Composición** (las
+`{"op":"damperWays","ways":{"front","rear"}}`; una clave no estándar necesita `description` (`"description": null` cuenta como ausente). **Composición** (las
 aplicaciones componen las capas así): se parte de los parámetros y las vías de la plantilla base (0/0 si no tiene) y se aplican las
 modificaciones en orden. `add` de una clave existente actúa como `change` y avisa; `change` o `remove` de una ausente no
 hace nada y avisa; `damperWays` sustituye las vías. Al final, las claves de amortiguador **se derivan solo de las vías
 finales** (las añadidas o quitadas a mano se sustituyen, sin aviso): las de las vías delanteras para `fl fr`, las de las
 traseras para `rl rr` y una común a los dos ejes para las cuatro ruedas, colocadas tras el último parámetro de
-suspensión (grupo `suspension`, `ride_height`, `spring_rate` o `damper_click_reference`) o al final.
+suspensión (un parámetro cuya descripción tiene el grupo `suspension`, o la clave `ride_height`, `spring_rate` o
+`damper_click_reference`) o al final.
 `damper_click_reference` no se deriva y se mantiene aunque las vías sean 0/0.
 
 ## Identificadores de circuito

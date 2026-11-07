@@ -21,7 +21,9 @@ public static class RunSetupFile
     };
 
     /// <summary>
-    /// Writes the file. <c>Orf</c> is forced to <see cref="RunFormat.Version"/>. The write is atomic: a temporary file in
+    /// Writes the file. <c>Orf</c> is forced to <see cref="RunFormat.Version"/>; when the file is older than 1.3, keys of
+    /// <c>values</c> and <c>parameters</c> that collide with the standard vocabulary are written as
+    /// <c>x-legacy-&lt;key&gt;</c> (specification §8.1), without converting values. The write is atomic: a temporary file in
     /// the same directory is flushed to disk and moved over the target; on failure an existing target is untouched.
     /// </summary>
     public static void Write(string path, RunSetup setup)
@@ -32,7 +34,7 @@ public static class RunSetupFile
         AtomicFile.Write(path, fs => fs.Write(bytes));
     }
 
-    /// <summary>The JSON text of a file, with <c>orf</c> forced to <see cref="RunFormat.Version"/>.</summary>
+    /// <summary>The JSON text of a file, with <c>orf</c> forced to <see cref="RunFormat.Version"/> (keys renamed as in <see cref="Write"/>).</summary>
     public static string Serialize(RunSetup setup)
     {
         ArgumentNullException.ThrowIfNull(setup);
@@ -41,6 +43,12 @@ public static class RunSetupFile
 
     private static byte[] SerializeToUtf8(RunSetup s)
     {
+        if (LegacyKeys.NeedsRename(s.Orf))
+            s = s with
+            {
+                Parameters = s.Parameters.Select(LegacyKeys.Rename).ToList(),
+                Values = s.Values is null ? null : LegacyKeys.Rename(s.Values),
+            };
         using var ms = new MemoryStream();
         using (var w = new Utf8JsonWriter(ms, WriterOptions))
         {

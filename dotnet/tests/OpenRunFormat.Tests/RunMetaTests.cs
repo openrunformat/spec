@@ -241,6 +241,40 @@ public class RunMetaTests : IDisposable
         Assert.Equal("1.7", RunMetaFile.Read(future).Orf);
     }
 
+    private static RunMeta WithValues(string orf, Dictionary<string, string> values) =>
+        Sample() with { Orf = orf, Setup = [new SetupInterval(100, 200, values)] };
+
+    [Fact]
+    public void Reescribir_runmeta_1_2_renombra_claves_del_vocabulario()
+    {
+        var path = Path.Combine(_dir, "old.runmeta");
+        RunMetaFile.Write(path, WithValues("1.2", new()
+        {
+            ["camber.fl"] = "-2", ["tyres"] = "Example", ["tyres.ref"] = "tyre:example", ["x-foo"] = "a", ["my_key"] = "b",
+        }));
+
+        var read = RunMetaFile.Read(path);
+
+        Assert.Equal("1.3", read.Orf);
+        Assert.Equal(
+            new Dictionary<string, string>
+            {
+                ["x-legacy-camber.fl"] = "-2", ["x-legacy-tyres"] = "Example", ["x-legacy-tyres.ref"] = "tyre:example",
+                ["x-foo"] = "a", ["my_key"] = "b",
+            },
+            read.Setup[0].Values);
+    }
+
+    [Fact]
+    public void Runmeta_1_3_se_escribe_sin_cambios()
+    {
+        var path = Path.Combine(_dir, "new.runmeta");
+        var values = new Dictionary<string, string> { ["camber.fl"] = "-0.03", ["tyres.ref"] = "tyre:example", ["x-foo"] = "a" };
+        RunMetaFile.Write(path, WithValues("1.3", values));
+
+        Assert.Equal(values, RunMetaFile.Read(path).Setup[0].Values);
+    }
+
     private static string RawWithParameters(string parametersJson) =>
         $$"""{"orf":"1.3","id":"run-1","runlogSha256":"00","parameters":{{parametersJson}}}""";
 

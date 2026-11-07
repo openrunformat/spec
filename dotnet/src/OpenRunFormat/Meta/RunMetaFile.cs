@@ -21,13 +21,16 @@ public static class RunMetaFile
     };
 
     /// <summary>
-/// Writes the companion. <c>Orf</c> is forced to <see cref="RunFormat.Version"/>. The write is atomic: a temporary
+/// Writes the companion. <c>Orf</c> is forced to <see cref="RunFormat.Version"/>; when the companion is older than 1.3,
+/// setup keys (and parameter keys) that collide with the standard vocabulary are written as <c>x-legacy-&lt;key&gt;</c>
+/// (specification §8.1), without converting values. The write is atomic: a temporary
 /// file in the same directory is flushed to disk and moved over the target; on failure an existing target is untouched.
 /// </summary>
     public static void Write(string path, RunMeta meta)
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(meta);
+        var legacy = LegacyKeys.NeedsRename(meta.Orf);
         using var ms = new MemoryStream();
         using (var w = new Utf8JsonWriter(ms, WriterOptions))
         {
@@ -45,7 +48,7 @@ public static class RunMetaFile
                 w.WriteNumber("s", s.S);
                 w.WriteNumber("e", s.E);
                 w.WriteStartObject("values");
-                foreach (var kv in s.Values) w.WriteString(kv.Key, kv.Value);
+                foreach (var kv in legacy ? LegacyKeys.Rename(s.Values) : s.Values) w.WriteString(kv.Key, kv.Value);
                 w.WriteEndObject();
                 w.WriteEndObject();
             }
@@ -55,7 +58,7 @@ public static class RunMetaFile
                 w.WriteStartObject("parameters");
                 foreach (var kv in meta.Parameters)
                 {
-                    w.WritePropertyName(kv.Key);
+                    w.WritePropertyName(legacy ? LegacyKeys.Rename(kv.Key) : kv.Key);
                     ParameterJson.Write(w, kv.Value);
                 }
                 w.WriteEndObject();

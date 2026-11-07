@@ -376,6 +376,10 @@ person. `name` is personal data: writers SHOULD only include it with the user's 
 The standard vocabulary governs the keys of `setup` values **only in files whose `orf` is 1.3 or later** (same major).
 In a file with `orf` 1.0, 1.1 or 1.2 every `setup` key is free text, even one that looks like a standard key: a reader
 MUST NOT reinterpret it (for example, `camber` in a 1.2 file is not an angle in radians, and its value is not converted).
+A writer that rewrites a file whose `orf` is below 1.3 MUST, before writing it as 1.3 or later, either convert to the
+vocabulary the keys whose meaning it knows, or rename every key that collides with the vocabulary to `x-legacy-<key>`
+(keeping the position suffix and the `.ref` companion: for example `camber.fl` becomes `x-legacy-camber.fl` and
+`tyres.ref` becomes `x-legacy-tyres.ref`). The reference library renames and never converts.
 The same rules apply to the `values` of a `.runsetup` file (section 11).
 
 **Keys.** A key is a base key, optionally followed by a position suffix:
@@ -392,8 +396,8 @@ form it takes.
 "tyre:example-tyre-245-30r20"`). A writer MUST NOT use `.ref` for identifiers that only make sense to one person or one
 application (a private unit, a local library).
 
-**Non-standard keys.** A key that is not in the vocabulary MUST start with `x-` (for example `x-drive-mode`), like custom
-channels. A writer MUST NOT use a standard key with a different meaning, unit or scope; such a parameter needs its own
+**Non-standard keys.** A key that is not in the vocabulary MUST start with `x-` (for example `x-drive-mode`); only the `x-`
+prefix is required. A writer MUST NOT use a standard key with a different meaning, unit or scope; such a parameter needs its own
 `x-` key. Readers accept any key.
 
 **Values** are always strings. Numeric values are in the SI unit of the table, written in round-trip notation (the
@@ -448,7 +452,7 @@ and edit a parameter that is not in the standard vocabulary. Keys of the standar
 | `catalogKind` | string | O | For a `text`: the kind of public catalog the value may link to through `<key>.ref` |
 | `min`, `max` | number | O | Limits of a numeric value, in its unit; `min <= max` |
 | `precision` | integer | O | Only for a `decimal`: number of decimals to show, `>= 0` |
-| `group` | string | O | Group id: `tyres`, `geometry`, `suspension`, `aero`, `brakes`, `electronics`, `mass` or `other` |
+| `group` | string | O | Group id, open list (see below) |
 | `personal` | bool | O | The value is personal data (see section 8.1). Default `false` |
 | `positions` | array | O | Position suffixes that apply when not all of the scope does (for example `["fl", "fr"]`); non-empty strings |
 | `clickReference` | string | O | For dampers: `from_hard` or `from_soft` |
@@ -458,6 +462,10 @@ field of the wrong JSON type, an empty `name`, an unknown `type` or `scope`, a `
 without `id` or `name`, `min > max`, a `precision` that is negative, not an integer or on a type other than `decimal`,
 or a `clickReference` other than `from_hard` and `from_soft`. The other entries and the rest of the file are still read.
 Unknown fields of a description are ignored.
+
+The standard group ids are `tyres`, `geometry`, `suspension`, `aero`, `brakes`, `electronics`, `mass` and `other`;
+readers MUST accept any string, and an application that does not know a group SHOULD show the parameter under `other`.
+Composition (section 11.5) only looks at `suspension`.
 
 ## 9. Conformance
 
@@ -603,7 +611,7 @@ file is a single UTF-8 JSON object without BOM, not compressed.
 | `values` | object | R/O | Setup values, string to string, with the keys and rules of section 8.1. Required in a setup |
 | `damperWays` | object | O | `{ "front": integer, "rear": integer }`: damping adjustment ways (0 to 4) of each axle |
 | `operations` | array | O | In a modification: operations applied in order (section 11.4) |
-| `composition` | object | O | In a setup: `{ "base": ref, "modifications": [ref...] }`, the layers it was built from, where `ref` is `{ "id": string, "version": integer }` |
+| `composition` | object | O | In a setup: `{ "base": ref, "modifications": [ref...] (O, missing = none) }`, the layers it was built from, where `ref` is `{ "id": string, "version": integer }` |
 | `extensions` | object | O | Data of applications, one key per application (for example `x-myapp`), any JSON value |
 
 A **template** has `id`, `version`, its `parameters` and, when the vehicle has adjustable dampers, `damperWays`. A
@@ -633,10 +641,11 @@ Everything else is tolerated:
   the first and the description of the last.
 - An operation is ignored on its own when it is malformed (section 11.4).
 - A malformed `damperWays` (missing `front` or `rear`, not an integer, outside 0 to 4), `composition` (missing or
-  malformed `base`, `modifications` not an array of refs, a ref without a non-empty `id` or a positive `version`) or
+  malformed `base`, `modifications` present and not an array of refs, a ref without a non-empty `id` or a positive `version`) or
   `extensions` (not an object) is ignored as a whole; so are `parameters` and `operations` of the wrong JSON type.
 
-Readers accept any `orf` 1.y, also lower than 1.3. Unknown fields are ignored and are not kept when a file is rewritten;
+Readers accept any `orf` 1.y, also lower than 1.3; a writer that rewrites such a file follows the renaming rule of
+section 8.1 for the keys of `values` and `parameters`. Unknown fields are ignored and are not kept when a file is rewritten;
 an application keeps its own data in `extensions`, which a writer that rewrites a file SHOULD keep as it is.
 
 ### 11.4 Operations
@@ -651,7 +660,7 @@ an application keeps its own data in `extensions`, which a writer that rewrites 
 `description` is required for a key that is not in the standard vocabulary. A reader ignores an operation on its own
 when it is not an object, `op` is missing or unknown, an `add`, `change` or `remove` lacks a non-empty `key`, an `add`
 or `change` has a malformed `description` or a non-standard key without one, or a `damperWays` lacks a valid `ways`. A
-`description` on a `remove` is ignored.
+`"description": null` on an `add` or `change` is treated as absent. A `description` on a `remove` is ignored.
 
 ### 11.5 Composition
 
@@ -672,8 +681,9 @@ The base MUST be a template and each layer a modification.
    without a warning. Then the keys of the front ways (section 8.1) apply to `fl` and `fr` and the keys of the rear ways
    to `rl` and `rr`; a key of both axles applies to all four wheels. The front keys come first, then the rear keys not
    already listed. A derived key keeps the description it had in the list, if any.
-4. The derived keys are placed right after the last suspension parameter: one whose description has the group
-   `suspension`, `ride_height`, `spring_rate` or `damper_click_reference`. If there is none, they go at the end.
+4. The derived keys are placed right after the last suspension parameter: a parameter whose description has group
+   `suspension`, or the key `ride_height`, `spring_rate` or `damper_click_reference`. If there is none, they go at the
+   end.
 
 `damper_click_reference` is not derived: it stays like any other parameter, also with ways `{0, 0}`. The result is a
 list of parameters, the positions of the damper keys and the final damper ways, plus the warnings, which a consumer

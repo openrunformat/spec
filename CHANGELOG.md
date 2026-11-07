@@ -4,16 +4,19 @@
 
 - Spec: standard vocabulary of 21 setup keys (section 8.1), with position suffixes `.fl .fr .rl .rr` and `.f .r`, a
   `<key>.ref` link to a public catalog, `x-` for non-standard keys and values in SI; it governs only files with `orf`
-  1.3 or later, so keys of 1.0–1.2 files stay free text. `driver_mass` and parameters marked `personal` are personal
-  data. The `.runmeta` gains `parameters` (section 8.2), descriptions of setup parameters; a reader ignores a
-  malformed entry on its own. New section 11: setup files `.runsetup` (template, modification, setup), their
+  1.3 or later, so keys of 1.0–1.2 files stay free text; rewriting such a file as 1.3 converts known keys or renames
+  colliding ones to `x-legacy-<key>`. `driver_mass` and parameters marked `personal` are personal data. The
+  `.runmeta` gains `parameters` (section 8.2), descriptions of setup parameters with an open list of groups; a reader
+  ignores a malformed entry on its own. New section 11: setup files `.runsetup` (template, modification, setup), their
   operations and the composition rule; damper keys derive only from the final damper ways. The example moves to
   section 12. `expected.json` of `runmeta/valid` accepts `parameters` and `setupKeys`, and `conformance/runsetup/` is
   new (section 9).
 - Schema: `parameters` in `runmeta.schema.json`; new `runsetup.schema.json`.
 - Library: `OpenRunFormat.Setup` with `SetupKeys` and `SetupVocabulary` (`Applies`, `BaseKeyOf`, `PositionOf`,
   `KeysFor`, `DamperKeys`), `ParameterDescription`, `RunMeta.Parameters`, `RunSetup` and `RunSetupFile` (atomic write)
-  and `RunSetupComposer`; the writers emit `orf` 1.3.
+  and `RunSetupComposer`; the writers emit `orf` 1.3. When the object is older than 1.3, `RunMetaFile.Write` and
+  `RunSetupFile.Write`/`Serialize` rename setup and parameter keys that collide with the vocabulary to
+  `x-legacy-<key>` (suffixes kept) and never convert values.
 - Conformance: `setup-1-3` and `parameters-malformed-entry-ignored` in `conformance/runmeta/valid/`, checked against the
   schema; `conformance/runsetup/valid/` and `conformance/runsetup/invalid/`.
 

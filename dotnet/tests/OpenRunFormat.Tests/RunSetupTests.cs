@@ -27,7 +27,7 @@ public class RunSetupTests : IDisposable
     [Fact]
     public void Plantilla_ida_y_vuelta_conserva_orden_de_parametros()
     {
-        var setup = new RunSetup("1.0", RunSetupKind.Template, new Dictionary<string, string> { ["en"] = "Street", ["es"] = "Calle" })
+        var setup = new RunSetup(RunFormat.Version, RunSetupKind.Template, new Dictionary<string, string> { ["en"] = "Street", ["es"] = "Calle" })
         {
             Id = "generic-street",
             Version = 2,
@@ -230,9 +230,45 @@ public class RunSetupTests : IDisposable
         var text = RunSetupFile.Serialize(read);
 
         Assert.DoesNotContain("unknown", text);
+        // A key of a 1.0 file is free text: it is renamed, not reinterpreted, when written as 1.3.
+        Assert.Equal("-0.03", RunSetupFile.Parse(text).Values!["x-legacy-camber.fl"]);
         using var doc = JsonDocument.Parse(text);
         Assert.Equal(RunFormat.Version, doc.RootElement.GetProperty("orf").GetString());
         Assert.Equal("base", doc.RootElement.GetProperty("extensions").GetProperty("x-myapp").GetProperty("levels")[0].GetString());
+    }
+
+    [Fact]
+    public void Reescribir_runsetup_1_2_renombra_claves_del_vocabulario()
+    {
+        var old = new RunSetup("1.2", RunSetupKind.Setup, En("S"))
+        {
+            Parameters =
+            [
+                new(SetupKeys.Camber, null),
+                new(SetupKeys.Tyres, new ParameterDescription(En("Tyres"), "text", SetupScope.Single)),
+                new("x-foo", new ParameterDescription(En("Foo"), "text", SetupScope.Single)),
+            ],
+            Values = new Dictionary<string, string>
+            {
+                ["camber.fl"] = "-2", ["tyres"] = "Example", ["tyres.ref"] = "tyre:example", ["x-foo"] = "a", ["my_key"] = "b",
+            },
+        };
+        var path = Path.Combine(_dir, "old.runsetup");
+
+        RunSetupFile.Write(path, old);
+        var read = RunSetupFile.Read(path);
+
+        Assert.Equal(RunFormat.Version, read.Orf);
+        Assert.Equal(
+            new Dictionary<string, string>
+            {
+                ["x-legacy-camber.fl"] = "-2", ["x-legacy-tyres"] = "Example", ["x-legacy-tyres.ref"] = "tyre:example",
+                ["x-foo"] = "a", ["my_key"] = "b",
+            },
+            read.Values);
+        Assert.Equal(["x-legacy-camber", "x-legacy-tyres", "x-foo"], read.Parameters.Select(p => p.Key));
+        Assert.Equal(SetupScope.Wheel, read.Parameters[0].Value!.Scope);
+        Assert.Equal("Tyres", read.Parameters[1].Value!.Name["en"]);
     }
 
     [Fact]
