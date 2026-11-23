@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.1 — specification 1.4 (draft), optional track in conditions
+
+- Spec: in `conditions`, `track` is optional. An entry MUST contain `source` and at least one of `track`, `weather`,
+  `light`, `airTemp` and `trackTemp`; an entry with none of them is malformed, so a reader ignores the whole field. The
+  specification version stays 1.4 (draft).
+- Schema: a `conditions` entry requires `source` and at least one of the five values.
+- Library: `ConditionInterval(S, E, Source, Track?, Weather?, Light?, AirTemp?, TrackTemp?)` (`Track` is nullable and
+  follows `Source`), `ConditionInterval.HasValues`; `RunMetaFile.Write` throws `ArgumentException` for an interval
+  without values.
+- Conformance: `conditions-light-only`, `conditions-without-track` and `conditions-source-only-ignored` in
+  `conformance/runmeta/valid/`.
+
 ## 0.6.0 — specification 1.4 (draft), conditions
 
 - Spec: the companion file `.runmeta` gains `conditions` (section 8): non-overlapping, half-open intervals with the

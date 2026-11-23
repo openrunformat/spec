@@ -241,8 +241,9 @@ public class RunMetaTests : IDisposable
         {
             Conditions =
             [
-                new ConditionInterval(0, 10, TrackState.Damp, ConditionSource.Declared, Weather.Cloudy, Light.Dusk, 12.5, 15),
-                new ConditionInterval(10, 20, TrackState.Wet, ConditionSource.Estimated),
+                new ConditionInterval(0, 10, ConditionSource.Declared, TrackState.Damp, Weather.Cloudy, Light.Dusk, 12.5, 15),
+                new ConditionInterval(10, 20, ConditionSource.Estimated, TrackState.Wet),
+                new ConditionInterval(20, 30, ConditionSource.Measured, Light: Light.Night),
             ],
         };
         RunMetaFile.Write(path, meta);
@@ -261,6 +262,31 @@ public class RunMetaTests : IDisposable
         var second = doc.RootElement.GetProperty("conditions")[1];
         foreach (var optional in new[] { "weather", "light", "airTemp", "trackTemp" })
             Assert.False(second.TryGetProperty(optional, out _));
+        var third = doc.RootElement.GetProperty("conditions")[2];
+        Assert.False(third.TryGetProperty("track", out _));
+        Assert.Equal("night", third.GetProperty("light").GetString());
+    }
+
+    [Theory]
+    [InlineData("""[{"s":0,"e":10,"light":"night","source":"declared"}]""")]
+    [InlineData("""[{"s":0,"e":10,"weather":"rain","source":"estimated"}]""")]
+    [InlineData("""[{"s":0,"e":10,"airTemp":21.5,"source":"estimated"}]""")]
+    [InlineData("""[{"s":0,"e":10,"trackTemp":30,"source":"measured"}]""")]
+    public void Condition_sin_track_con_otro_valor_es_valida(string conditions)
+    {
+        var path = WriteRaw(_dir, RawWithConditions(conditions));
+        var read = Assert.Single(RunMetaFile.Read(path).Conditions);
+        Assert.Null(read.Track);
+        Assert.True(read.HasValues);
+    }
+
+    [Fact]
+    public void Escribir_condition_sin_valores_lanza()
+    {
+        var path = Path.Combine(_dir, "empty-cond.runmeta");
+        var meta = Sample() with { Conditions = [new ConditionInterval(0, 10, ConditionSource.Declared)] };
+        Assert.Throws<ArgumentException>(() => RunMetaFile.Write(path, meta));
+        Assert.False(File.Exists(path));
     }
 
     [Fact]
@@ -290,6 +316,7 @@ public class RunMetaTests : IDisposable
     [InlineData("""[{"s":10,"e":10,"track":"dry","source":"declared"}]""")]
     [InlineData("""[{"s":10,"e":5,"track":"dry","source":"declared"}]""")]
     [InlineData("""[{"s":0,"e":10,"source":"declared"}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"dry","source":"declared"},{"s":10,"e":20,"source":"declared"}]""")]
     [InlineData("""[{"s":0,"e":10,"track":"dry"}]""")]
     [InlineData("""[{"e":10,"track":"dry","source":"declared"}]""")]
     [InlineData("""[{"s":0,"e":10.5,"track":"dry","source":"declared"}]""")]
