@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.0 — specification 1.4 (draft), conditions
+
+- Spec: the companion file `.runmeta` gains `conditions` (section 8): non-overlapping, half-open intervals with the
+  state of the track (`dry`, `damp`, `wet`), optional `weather` (`clear`, `cloudy`, `rain`, `snow`, `fog`) and `light`
+  (`day`, `dusk`, `night`), optional `airTemp` and `trackTemp` in °C, and the `source` of the values (`declared`,
+  `measured`, `estimated`). As with `drivers`, a reader ignores the whole field when an entry is malformed (including an
+  unknown value) or intervals overlap; a gap means the conditions were not recorded. Producers should not present
+  estimated values as declared. `expected.json` of `runmeta/valid` accepts `conditions` (section 9).
+- Schema: `conditions` in `runmeta.schema.json`.
+- Library: `ConditionInterval`, `TrackState`, `Weather`, `Light`, `ConditionSource` and `RunMeta.Conditions` (never
+  null); the writer emits `conditions` only when there are any, and `orf` 1.4; the reader returns an empty list for a
+  malformed field.
+- Conformance: `conditions` and five `conditions-*-ignored` files (overlap, end before start, unknown value, malformed
+  entries) in `conformance/runmeta/valid/`.
+
 ## 0.5.0 — specification 1.3 (draft), setup vocabulary and .runsetup
 
 - Spec: standard vocabulary of 21 setup keys (section 8.1), with position suffixes `.fl .fr .rl .rr` and `.f .r`, a

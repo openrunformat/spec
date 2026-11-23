@@ -17,6 +17,29 @@ public sealed record Note(long T, string Text);
 /// </summary>
 public sealed record DriverInterval(long S, long E, string Id, string Name, string? Initials = null);
 
+/// <summary>State of the track surface (specification 1.4). <see cref="Damp"/> lies between dry and wet: wet patches, or a track drying or getting wet.</summary>
+public enum TrackState { Dry, Damp, Wet }
+
+/// <summary>Weather in the sky (specification 1.4), independent of the light.</summary>
+public enum Weather { Clear, Cloudy, Rain, Snow, Fog }
+
+/// <summary>Natural light (specification 1.4), independent of the weather.</summary>
+public enum Light { Day, Dusk, Night }
+
+/// <summary>
+/// Where the conditions of an interval come from (specification 1.4): <see cref="Declared"/> by the driver or user,
+/// <see cref="Measured"/> by a sensor, <see cref="Estimated"/> by a weather service or model.
+/// </summary>
+public enum ConditionSource { Declared, Measured, Estimated }
+
+/// <summary>
+/// The conditions from <paramref name="S"/> to <paramref name="E"/> (absolute Unix epoch nanoseconds, half-open).
+/// <paramref name="AirTemp"/> and <paramref name="TrackTemp"/> are in °C. Only <paramref name="Track"/> and
+/// <paramref name="Source"/> are required.
+/// </summary>
+public sealed record ConditionInterval(long S, long E, TrackState Track, ConditionSource Source,
+    Weather? Weather = null, Light? Light = null, double? AirTemp = null, double? TrackTemp = null);
+
 /// <summary>
 /// The companion file (.runmeta) of a .runlog: user-owned data that is not part of the telemetry itself.
 /// <para>
@@ -49,6 +72,12 @@ public sealed record RunMeta(string Orf, string Id, string RunlogSha256,
     /// Empty when the file has none.
     /// </summary>
     public IReadOnlyDictionary<string, ParameterDescription> Parameters { get; init; } = new Dictionary<string, ParameterDescription>();
+
+    /// <summary>
+    /// Condition intervals (track, weather, light, temperatures) in absolute epoch nanoseconds; non-overlapping
+    /// (specification 1.4). Empty when the file has none or the field is malformed.
+    /// </summary>
+    public IReadOnlyList<ConditionInterval> Conditions { get; init; } = [];
 
     /// <summary>
     /// True when this companion was made for the given .runlog: the run <c>Id</c> must match exactly and the

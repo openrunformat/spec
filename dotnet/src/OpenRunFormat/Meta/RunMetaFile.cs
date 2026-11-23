@@ -76,6 +76,24 @@ public static class RunMetaFile
                 w.WriteEndObject();
             }
             w.WriteEndArray();
+            if (meta.Conditions.Count > 0)
+            {
+                w.WriteStartArray("conditions");
+                foreach (var c in meta.Conditions)
+                {
+                    w.WriteStartObject();
+                    w.WriteNumber("s", c.S);
+                    w.WriteNumber("e", c.E);
+                    w.WriteString("track", Name(c.Track));
+                    if (c.Weather is { } weather) w.WriteString("weather", Name(weather));
+                    if (c.Light is { } light) w.WriteString("light", Name(light));
+                    if (c.AirTemp is { } air) w.WriteNumber("airTemp", air);
+                    if (c.TrackTemp is { } trackTemp) w.WriteNumber("trackTemp", trackTemp);
+                    w.WriteString("source", Name(c.Source));
+                    w.WriteEndObject();
+                }
+                w.WriteEndArray();
+            }
             w.WriteStartArray("notes");
             foreach (var n in meta.Notes)
             {
@@ -143,7 +161,11 @@ public static class RunMetaFile
             var drivers = ReadDrivers(r);
 
             return new RunMeta(orf, RecordCodec.Req(r, "id").GetString()!, RecordCodec.Req(r, "runlogSha256").GetString()!,
-                vehicle, setup, notes, segments, drivers) { Parameters = ReadParameters(r, SetupVocabulary.Applies(orf)) };
+                vehicle, setup, notes, segments, drivers)
+            {
+                Parameters = ReadParameters(r, SetupVocabulary.Applies(orf)),
+                Conditions = ReadConditions(r),
+            };
         }
         catch (FormatException) { throw; }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException or OverflowException)
@@ -180,6 +202,99 @@ public static class RunMetaFile
             if (result[i].S < result[i - 1].E) return [];
         return result;
     }
+
+    // Like drivers, a malformed list (missing or unknown track/source, unknown weather/light, non-numeric temperature,
+    // e <= s, overlap) is ignored as a whole; the rest of the file still reads. Unknown fields of an entry are ignored.
+    private static List<ConditionInterval> ReadConditions(JsonElement root)
+    {
+        var result = new List<ConditionInterval>();
+        if (RecordCodec.Opt(root, "conditions") is not { ValueKind: JsonValueKind.Array } arr) return result;
+        foreach (var c in arr.EnumerateArray())
+        {
+            if (c.ValueKind != JsonValueKind.Object
+                || !TryGet(c, "s", JsonValueKind.Number, out var sEl) || !sEl.TryGetInt64(out var s)
+                || !TryGet(c, "e", JsonValueKind.Number, out var eEl) || !eEl.TryGetInt64(out var e)
+                || e <= s
+                || !TryGet(c, "track", JsonValueKind.String, out var trackEl) || ParseTrack(trackEl.GetString()) is not { } track
+                || !TryGet(c, "source", JsonValueKind.String, out var srcEl) || ParseSource(srcEl.GetString()) is not { } source
+                || !TryOptional(c, "weather", ParseWeather, out var weather)
+                || !TryOptional(c, "light", ParseLight, out var light)
+                || !TryTemperature(c, "airTemp", out var airTemp)
+                || !TryTemperature(c, "trackTemp", out var trackTemp))
+                return [];
+            result.Add(new ConditionInterval(s, e, track, source, weather, light, airTemp, trackTemp));
+        }
+        result.Sort((a, b) => a.S.CompareTo(b.S));
+        for (var i = 1; i < result.Count; i++)
+            if (result[i].S < result[i - 1].E) return [];
+        return result;
+    }
+
+    // Absent: true with null. Present: true only for a string with a known value.
+    private static bool TryOptional<T>(JsonElement obj, string name, Func<string?, T?> parse, out T? value) where T : struct
+    {
+        value = null;
+        if (!obj.TryGetProperty(name, out var el)) return true;
+        if (el.ValueKind != JsonValueKind.String) return false;
+        value = parse(el.GetString());
+        return value is not null;
+    }
+
+    // Absent: true with null. Present: true only for a finite JSON number.
+    private static bool TryTemperature(JsonElement obj, string name, out double? value)
+    {
+        value = null;
+        if (!obj.TryGetProperty(name, out var el)) return true;
+        if (el.ValueKind != JsonValueKind.Number || !el.TryGetDouble(out var d) || !double.IsFinite(d)) return false;
+        value = d;
+        return true;
+    }
+
+    private static TrackState? ParseTrack(string? s) => s switch
+    {
+        "dry" => TrackState.Dry, "damp" => TrackState.Damp, "wet" => TrackState.Wet, _ => null,
+    };
+
+    private static Weather? ParseWeather(string? s) => s switch
+    {
+        "clear" => Weather.Clear, "cloudy" => Weather.Cloudy, "rain" => Weather.Rain, "snow" => Weather.Snow,
+        "fog" => Weather.Fog, _ => null,
+    };
+
+    private static Light? ParseLight(string? s) => s switch
+    {
+        "day" => Light.Day, "dusk" => Light.Dusk, "night" => Light.Night, _ => null,
+    };
+
+    private static ConditionSource? ParseSource(string? s) => s switch
+    {
+        "declared" => ConditionSource.Declared, "measured" => ConditionSource.Measured,
+        "estimated" => ConditionSource.Estimated, _ => null,
+    };
+
+    private static string Name(TrackState v) => v switch
+    {
+        TrackState.Dry => "dry", TrackState.Damp => "damp", TrackState.Wet => "wet",
+        _ => throw new ArgumentOutOfRangeException(nameof(v), v, null),
+    };
+
+    private static string Name(Weather v) => v switch
+    {
+        Weather.Clear => "clear", Weather.Cloudy => "cloudy", Weather.Rain => "rain", Weather.Snow => "snow",
+        Weather.Fog => "fog", _ => throw new ArgumentOutOfRangeException(nameof(v), v, null),
+    };
+
+    private static string Name(Light v) => v switch
+    {
+        Light.Day => "day", Light.Dusk => "dusk", Light.Night => "night",
+        _ => throw new ArgumentOutOfRangeException(nameof(v), v, null),
+    };
+
+    private static string Name(ConditionSource v) => v switch
+    {
+        ConditionSource.Declared => "declared", ConditionSource.Measured => "measured",
+        ConditionSource.Estimated => "estimated", _ => throw new ArgumentOutOfRangeException(nameof(v), v, null),
+    };
 
     // A malformed entry is ignored on its own; the other entries and the rest of the file still read. Where the
     // vocabulary governs, a description of a standard key takes the vocabulary's type, unit and scope.
