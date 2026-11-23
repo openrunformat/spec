@@ -230,23 +230,110 @@ public class RunMetaTests : IDisposable
         Assert.Empty(RunMetaFile.Read(path).Drivers);
     }
 
+    private static string RawWithConditions(string conditionsJson) =>
+        $$"""{"orf":"1.4","id":"run-1","runlogSha256":"00","conditions":{{conditionsJson}}}""";
+
     [Fact]
-    public void Escribe_orf_1_3()
+    public void Conditions_ida_y_vuelta()
+    {
+        var path = Path.Combine(_dir, "cond.runmeta");
+        var meta = Sample() with
+        {
+            Conditions =
+            [
+                new ConditionInterval(0, 10, TrackState.Damp, ConditionSource.Declared, Weather.Cloudy, Light.Dusk, 12.5, 15),
+                new ConditionInterval(10, 20, TrackState.Wet, ConditionSource.Estimated),
+            ],
+        };
+        RunMetaFile.Write(path, meta);
+
+        var read = RunMetaFile.Read(path);
+
+        Assert.Equal(meta.Conditions, read.Conditions);
+        using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
+        var first = doc.RootElement.GetProperty("conditions")[0];
+        Assert.Equal("damp", first.GetProperty("track").GetString());
+        Assert.Equal("cloudy", first.GetProperty("weather").GetString());
+        Assert.Equal("dusk", first.GetProperty("light").GetString());
+        Assert.Equal(12.5, first.GetProperty("airTemp").GetDouble());
+        Assert.Equal(15, first.GetProperty("trackTemp").GetDouble());
+        Assert.Equal("declared", first.GetProperty("source").GetString());
+        var second = doc.RootElement.GetProperty("conditions")[1];
+        foreach (var optional in new[] { "weather", "light", "airTemp", "trackTemp" })
+            Assert.False(second.TryGetProperty(optional, out _));
+    }
+
+    [Fact]
+    public void Sin_conditions_lee_vacio_y_no_escribe_el_campo()
+    {
+        var path = WriteRaw(_dir, """{"orf":"1.3","id":"run-1","runlogSha256":"00"}""");
+        Assert.Empty(RunMetaFile.Read(path).Conditions);
+
+        var written = Path.Combine(_dir, "nocond.runmeta");
+        RunMetaFile.Write(written, Sample());
+        Assert.DoesNotContain("\"conditions\"", File.ReadAllText(written));
+    }
+
+    [Fact]
+    public void Conditions_desordenadas_y_contiguas_se_leen_ordenadas()
+    {
+        var path = WriteRaw(_dir, RawWithConditions(
+            """[{"s":10,"e":20,"track":"wet","source":"measured","x-extra":1},{"s":0,"e":10,"track":"dry","source":"declared"}]"""));
+        var read = RunMetaFile.Read(path).Conditions;
+        Assert.Equal([0L, 10L], read.Select(c => c.S));
+        Assert.Equal(TrackState.Dry, read[0].Track);
+        Assert.Equal(ConditionSource.Measured, read[1].Source);
+    }
+
+    [Theory]
+    [InlineData("""[{"s":0,"e":10,"track":"dry","source":"declared"},{"s":5,"e":15,"track":"wet","source":"declared"}]""")]
+    [InlineData("""[{"s":10,"e":10,"track":"dry","source":"declared"}]""")]
+    [InlineData("""[{"s":10,"e":5,"track":"dry","source":"declared"}]""")]
+    [InlineData("""[{"s":0,"e":10,"source":"declared"}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"dry"}]""")]
+    [InlineData("""[{"e":10,"track":"dry","source":"declared"}]""")]
+    [InlineData("""[{"s":0,"e":10.5,"track":"dry","source":"declared"}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"slippery","source":"declared"}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"Dry","source":"declared"}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"dry","source":"guessed"}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"dry","source":"declared","weather":"hail"}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"dry","source":"declared","weather":null}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"dry","source":"declared","light":"dawn"}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"dry","source":"declared","airTemp":"20"}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"dry","source":"declared","trackTemp":null}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"dry","source":"declared"},5]""")]
+    public void Conditions_mal_formadas_se_ignora_el_campo(string conditions)
+    {
+        var path = WriteRaw(_dir, RawWithConditions(conditions));
+        var meta = RunMetaFile.Read(path);
+        Assert.Empty(meta.Conditions);
+        Assert.Equal("run-1", meta.Id);
+    }
+
+    [Fact]
+    public void Conditions_que_no_es_array_se_ignora()
+    {
+        var path = WriteRaw(_dir, RawWithConditions("""{"track":"dry"}"""));
+        Assert.Empty(RunMetaFile.Read(path).Conditions);
+    }
+
+    [Fact]
+    public void Escribe_orf_1_4()
     {
         var path = Path.Combine(_dir, "v.runmeta");
         RunMetaFile.Write(path, Sample());
-        Assert.Contains("\"orf\": \"1.3\"", File.ReadAllText(path));
+        Assert.Contains("\"orf\": \"1.4\"", File.ReadAllText(path));
 
         var future = WriteRaw(_dir, RawWithDrivers("1.7", "[]"));
         Assert.Equal("1.7", RunMetaFile.Read(future).Orf);
     }
 
     [Fact]
-    public void Reescribir_runmeta_1_4_conserva_la_version()
+    public void Reescribir_runmeta_1_5_conserva_la_version()
     {
         var path = Path.Combine(_dir, "future.runmeta");
-        RunMetaFile.Write(path, Sample() with { Orf = "1.4" });
-        Assert.Equal("1.4", RunMetaFile.Read(path).Orf);
+        RunMetaFile.Write(path, Sample() with { Orf = "1.5" });
+        Assert.Equal("1.5", RunMetaFile.Read(path).Orf);
 
         RunMetaFile.Write(path, Sample() with { Orf = "1.12" });
         Assert.Equal("1.12", RunMetaFile.Read(path).Orf);
@@ -282,7 +369,7 @@ public class RunMetaTests : IDisposable
 
         var read = RunMetaFile.Read(path);
 
-        Assert.Equal("1.3", read.Orf);
+        Assert.Equal(RunFormat.Version, read.Orf);
         Assert.Equal(
             new Dictionary<string, string>
             {

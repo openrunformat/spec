@@ -6,7 +6,7 @@ namespace OpenRunFormat;
 public static class RunFormat
 {
     /// <summary>Specification version written to the header's <c>orf</c> field.</summary>
-    public const string Version = "1.3";
+    public const string Version = "1.4";
 
     /// <summary>
     /// The version a writer emits when it rewrites a companion or setup file of version <paramref name="orf"/>: the
