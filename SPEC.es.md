@@ -1,6 +1,6 @@
-# Open Run Format (ORF) 1.3 — resumen en español
+# Open Run Format (ORF) 1.4 — resumen en español
 
-Este resumen no es normativo: manda [SPEC.md](SPEC.md) (inglés). Versión de la especificación: 1.3 (borrador).
+Este resumen no es normativo: manda [SPEC.md](SPEC.md) (inglés). Versión de la especificación: 1.4 (borrador).
 
 ## Qué es
 
@@ -88,8 +88,8 @@ no fuerza la escritura a disco (no hace fsync). Quien reescribe un fichero exist
 ## `.runmeta`
 
 Fichero aparte, opcional, JSON sin comprimir: `orf`, `id`, `runlogSha256` y opcionales `vehicle`, `setup`
-(`{s, e, values}`), `drivers` (`{s, e, id, name, initials?}`, desde 1.1), `parameters` (desde 1.3), `notes`
-(`{t, text}`) y `userSegments`. Los instantes (`s`, `e`, `t`, `splits`) son **epoch ns absolutos**; `time` de `userSegments` sigue siendo una duración. Solo se
+(`{s, e, values}`), `drivers` (`{s, e, id, name, initials?}`, desde 1.1), `parameters` (desde 1.3), `conditions`
+(desde 1.4), `notes` (`{t, text}`) y `userSegments`. Los instantes (`s`, `e`, `t`, `splits`) son **epoch ns absolutos**; `time` de `userSegments` sigue siendo una duración. Solo se
 aplica si `id` coincide con el de la cabecera y el hash con el del `.runlog`.
 
 `drivers` (1.1): quién conducía en cada intervalo. `s` y `e` son epoch ns absolutos con `e > s` y el intervalo es
@@ -99,6 +99,27 @@ es un objeto, le falta `s`, `e`, `id` o `name`, tiene un tipo erróneo, `id` o `
 otra; el resto del fichero se lee igual. Un hueco significa «sin piloto registrado». `id` es un identificador opaco y
 estable que elige el escritor: DEBERÍA ser aleatorio y NO DEBE derivarse de datos personales. `name` es un dato
 personal: los escritores DEBERÍAN incluirlo solo con el consentimiento del usuario.
+
+`conditions` (1.4): condiciones de la salida por intervalo, `{s, e, track, weather?, light?, airTemp?, trackTemp?,
+source}`. `s` y `e` siguen las reglas de `drivers` (epoch ns absolutos, `e > s`, `[s, e)`, sin solapes, en cualquier
+orden); un hueco significa «condiciones no registradas», no «seco» ni «sin cambios». `track` (obligatorio) es el estado
+de la pista: `dry` (seca), `wet` (mojada, con agua o toda la superficie húmeda) o `damp` (entre las dos: zonas mojadas
+en una pista seca, o una pista que se está secando o mojando). `weather` (opcional) es el cielo: `clear`, `cloudy`,
+`rain`, `snow` o `fog`; no describe la superficie (una pista puede estar `wet` con cielo `clear` tras la lluvia).
+`light` (opcional) es la luz natural, `day`, `dusk` (crepúsculo, al amanecer o al anochecer) o `night`, y es
+independiente de `weather`. `airTemp` y `trackTemp` (opcionales) son las temperaturas del aire y de la superficie de la
+pista en **°C** (la unidad de temperatura de la sección 5 de SPEC.md), como números JSON, para el intervalo entero; una
+serie temporal de temperatura del aire va en el canal `ambient_temp` del `.runlog`. `source` (obligatorio) dice de dónde
+salen los valores: `declared` (lo declara el piloto u otro usuario), `measured` (lo mide un sensor) o `estimated` (lo
+estima un servicio meteorológico, una previsión o un modelo). Una entrada tiene una sola fuente; si mezcla orígenes se
+escribe el menos directo (`estimated` antes que `declared`, y este antes que `measured`). Los productores NO DEBERÍAN
+presentar valores estimados como `declared` o `measured`.
+Un lector ignora todo el campo si alguna entrada no es un objeto, le falta `s`, `e`, `track` o `source`, tiene un tipo
+JSON erróneo (también `null` en un campo opcional o una temperatura que no es un número), un valor de `track`,
+`weather`, `light` o `source` que no está en las listas (distinguen mayúsculas), `e <= s` o se solapa con otra; el resto
+del fichero se lee igual y los campos desconocidos de una entrada se ignoran. Las listas están cerradas en 1.4: una
+versión menor posterior puede añadir valores, que un lector que no los conoce trata como mal formados, así que un
+escritor DEBERÍA usar solo los valores de la versión `orf` que escribe.
 
 Vocabulario de `setup` (1.3, SPEC §8.1): **solo rige si `orf` es 1.3 o posterior**. En un fichero 1.0–1.2 todas las
 claves de `setup` son texto libre y NO DEBEN reinterpretarse (un `camber` de un fichero 1.2 no son radianes ni se
@@ -208,9 +229,10 @@ circuito = `ES-catalunya`; id de variante = `ES-catalunya/gp@2023`. En `course` 
 `conformance/valid` (con `<nombre>.expected.json`, que incluye tiempos, valores y `end` cuando se declaran) debe leerse;
 `conformance/invalid` (un fichero por regla de la sección 4 de SPEC.md) debe rechazarse. La prosa de SPEC.md manda: los
 esquemas JSON pueden ser más estrictos.
-`conformance/runmeta/valid/<nombre>.runmeta` con `<nombre>.expected.json` `{"drivers": n, "parameters": n, "setupKeys": n}`
-(claves opcionales): un lector DEBE aceptar el fichero y producir ese número de pilotos (un campo `drivers` ignorado
-cuenta 0), de descripciones de parámetros y de claves del primer intervalo de `setup`.
+`conformance/runmeta/valid/<nombre>.runmeta` con `<nombre>.expected.json` `{"drivers": n, "parameters": n, "setupKeys": n,
+"conditions": n}` (claves opcionales): un lector DEBE aceptar el fichero y producir ese número de pilotos (un campo
+`drivers` ignorado cuenta 0), de descripciones de parámetros, de claves del primer intervalo de `setup` y de intervalos
+de condiciones (un campo `conditions` ignorado cuenta 0).
 `conformance/runsetup/valid/<nombre>.runsetup` con `<nombre>.expected.json` `{"kind", "parameters": n, "values": n,
 "operations": n (opcional)}` debe leerse y cumplir el esquema; `conformance/runsetup/invalid` debe rechazarse.
 `conformance/compose/<caso>/` tiene `base.runsetup`, las modificaciones `mod-1.runsetup`, `mod-2.runsetup`... (en ese

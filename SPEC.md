@@ -1,6 +1,6 @@
-# Open Run Format (ORF) 1.3 — draft
+# Open Run Format (ORF) 1.4 — draft
 
-File extension: `.runlog`. Companion file: `.runmeta`. Setup file: `.runsetup`. Specification version: `1.3` (draft, see
+File extension: `.runlog`. Companion file: `.runmeta`. Setup file: `.runsetup`. Specification version: `1.4` (draft, see
 `CHANGELOG.md`).
 
 The key words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119.
@@ -352,6 +352,7 @@ are **absolute Unix epoch nanoseconds**, never relative file times and never sam
 | `setup` | array | O | Objects `{ "s": ns, "e": ns, "values": { string: string } }` — a configuration (pressures, modes, tyres...) valid for an interval |
 | `drivers` | array | O | Objects `{ "s": ns, "e": ns, "id": string, "name": string, "initials": string (O) }` — who was driving during the interval. Intervals MUST NOT overlap; a reader that finds overlapping or malformed entries ignores the whole field without rejecting the file. A gap means "no driver recorded". |
 | `parameters` | object | O | Descriptions of setup parameters, by base key (added in 1.3, see section 8.2). A malformed entry is ignored on its own |
+| `conditions` | array | O | Objects `{ "s": ns, "e": ns, "track": string, "weather": string (O), "light": string (O), "airTemp": number (O), "trackTemp": number (O), "source": string }` — track, weather and light conditions during the interval (added in 1.4, see below). Same interval rules as `drivers`: a reader that finds overlapping or malformed entries ignores the whole field without rejecting the file. A gap means "conditions not recorded". |
 | `notes` | array | O | Objects `{ "t": ns, "text": string }` |
 | `userSegments` | array | O | Segments defined by the user, with the same fields as a `seg` record without `k` (`kind`, `s`, `e`, `src` required) |
 
@@ -370,6 +371,33 @@ not an object, lacks `s`, `e`, `id` or `name`, has a value of the wrong type, ha
 derived from personal data (name, e-mail, account). Consumers use it to tell whether two intervals are the same
 person. `name` is personal data: writers SHOULD only include it with the user's consent, and anyone sharing a
 `.runmeta` should remember it contains that name.
+
+`conditions` (added in 1.4): the conditions in which the run took place, by interval. `s` and `e` follow the rules of
+`drivers`: absolute epoch nanoseconds, `e > s`, half-open `[s, e)`, intervals MUST NOT overlap, entries in any order, and
+a gap means the conditions of that time were not recorded (not that they were dry or unchanged). The fields of an entry:
+
+- `track` (required): the state of the track surface. `dry`; `wet`, standing water or a fully wet surface; `damp`,
+  between the two: wet patches on an otherwise dry track, or a track that is drying or getting wet.
+- `weather` (optional): the weather in the sky: `clear`, `cloudy`, `rain`, `snow` or `fog`. It describes the sky, not
+  the surface: a track can be `wet` under a `clear` sky after rain.
+- `light` (optional): the natural light: `day`, `dusk` or `night`. It is separate from `weather`: `night` with `clear`
+  and `day` with `fog` are both valid. `dusk` covers both dawn and dusk twilight.
+- `airTemp` and `trackTemp` (optional): air temperature and track surface temperature in **°C** (degrees Celsius, the
+  temperature unit of section 5), as JSON numbers. They describe the interval as a whole; a time series of the air
+  temperature belongs in the `ambient_temp` channel of the `.runlog`.
+- `source` (required): where the values of the entry come from. `declared`, stated by the driver or another user;
+  `measured`, read from a sensor (on the vehicle, at the track or carried by the driver); `estimated`, obtained from a
+  weather service, a forecast or a model for that place and time. One entry has one source for all its values: a
+  writer that combines values of different origins writes the least direct one (`estimated` before `declared` before
+  `measured`). Producers SHOULD NOT present estimated values as `declared` or `measured`, so a consumer can tell a
+  driver's report or a sensor reading from a forecast.
+
+A reader ignores the whole field (as if absent) when any entry is not an object, lacks `s`, `e`, `track` or `source`,
+has a value of the wrong JSON type (including `null` for an optional field and a temperature that is not a number),
+has a value of `track`, `weather`, `light` or `source` that is not in the lists above (they are case-sensitive), has
+`e <= s`, or overlaps another entry; the rest of the file is still read. Unknown fields of an entry are ignored. The
+value lists are closed in 1.4: a later minor version may add values, and a reader that does not know one ignores the
+whole field as above, so a writer SHOULD only use the values defined by the `orf` version it writes.
 
 ### 8.1 Setup vocabulary (added in 1.3)
 
@@ -490,10 +518,10 @@ The directory `conformance/` contains synthetic files that every implementation 
   `{"complete": bool, "trailingContent": bool (optional, default false), "channels": {"<id>": <number of samples>}, "segments": n, "kind": "real|sim|synthetic", "derivedFrom": {"id", "s", "e"} | null (optional)}`. A reader
   MUST accept the file and produce those values (`"derivedFrom": null` means the reader reports no `derivedFrom`).
 - `conformance/invalid/*`: a reader MUST reject each file.
-- `conformance/runmeta/valid/<name>.runmeta` with `<name>.expected.json` `{"drivers": n, "parameters": n, "setupKeys": n}`
-  (each key optional): a reader MUST accept the file and produce that number of drivers (an ignored `drivers` field
-  counts as 0), of parameter descriptions (ignored entries do not count) and of keys in the `values` of the first
-  `setup` interval. Files named `*-ignored` hold a malformed optional field or entry that a reader ignores; a writer
+- `conformance/runmeta/valid/<name>.runmeta` with `<name>.expected.json` `{"drivers": n, "parameters": n, "setupKeys": n,
+  "conditions": n}` (each key optional): a reader MUST accept the file and produce that number of drivers (an ignored
+  `drivers` field counts as 0), of parameter descriptions (ignored entries do not count), of keys in the `values` of the
+  first `setup` interval and of condition intervals (an ignored `conditions` field counts as 0). Files named `*-ignored` hold a malformed optional field or entry that a reader ignores; a writer
   MUST NOT produce them (they do not match the schema). The others match `schema/runmeta.schema.json`.
 - `conformance/runsetup/valid/<name>.runsetup` with `<name>.expected.json`
   `{"kind": "template|modification|setup", "parameters": n, "values": n, "operations": n (optional)}`: a reader MUST

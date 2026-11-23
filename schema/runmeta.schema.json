@@ -41,6 +41,24 @@
         }
       }
     },
+    "conditions": {
+      "description": "Track, weather and light conditions by interval (added in 1.4). Temperatures in degrees Celsius. Readers ignore the whole field when an entry is malformed or intervals overlap.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["s", "e", "track", "source"],
+        "properties": {
+          "s": { "type": "integer" },
+          "e": { "type": "integer" },
+          "track": { "enum": ["dry", "damp", "wet"] },
+          "weather": { "enum": ["clear", "cloudy", "rain", "snow", "fog"] },
+          "light": { "enum": ["day", "dusk", "night"] },
+          "airTemp": { "type": "number" },
+          "trackTemp": { "type": "number" },
+          "source": { "enum": ["declared", "measured", "estimated"] }
+        }
+      }
+    },
     "notes": {
       "type": "array",
       "items": {
