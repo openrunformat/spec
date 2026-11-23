@@ -34,11 +34,16 @@ public enum ConditionSource { Declared, Measured, Estimated }
 
 /// <summary>
 /// The conditions from <paramref name="S"/> to <paramref name="E"/> (absolute Unix epoch nanoseconds, half-open).
-/// <paramref name="AirTemp"/> and <paramref name="TrackTemp"/> are in °C. Only <paramref name="Track"/> and
-/// <paramref name="Source"/> are required.
+/// <paramref name="AirTemp"/> and <paramref name="TrackTemp"/> are in °C. <paramref name="Source"/> is required, and
+/// at least one of <paramref name="Track"/>, <paramref name="Weather"/>, <paramref name="Light"/>,
+/// <paramref name="AirTemp"/> and <paramref name="TrackTemp"/> must be set.
 /// </summary>
-public sealed record ConditionInterval(long S, long E, TrackState Track, ConditionSource Source,
-    Weather? Weather = null, Light? Light = null, double? AirTemp = null, double? TrackTemp = null);
+public sealed record ConditionInterval(long S, long E, ConditionSource Source, TrackState? Track = null,
+    Weather? Weather = null, Light? Light = null, double? AirTemp = null, double? TrackTemp = null)
+{
+    /// <summary>True when at least one condition (track, weather, light or a temperature) is set.</summary>
+    public bool HasValues => Track is not null || Weather is not null || Light is not null || AirTemp is not null || TrackTemp is not null;
+}
 
 /// <summary>
 /// The companion file (.runmeta) of a .runlog: user-owned data that is not part of the telemetry itself.

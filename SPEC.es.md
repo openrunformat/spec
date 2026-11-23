@@ -100,9 +100,11 @@ otra; el resto del fichero se lee igual. Un hueco significa «sin piloto registr
 estable que elige el escritor: DEBERÍA ser aleatorio y NO DEBE derivarse de datos personales. `name` es un dato
 personal: los escritores DEBERÍAN incluirlo solo con el consentimiento del usuario.
 
-`conditions` (1.4): condiciones de la salida por intervalo, `{s, e, track, weather?, light?, airTemp?, trackTemp?,
+`conditions` (1.4): condiciones de la salida por intervalo, `{s, e, track?, weather?, light?, airTemp?, trackTemp?,
 source}`. `s` y `e` siguen las reglas de `drivers` (epoch ns absolutos, `e > s`, `[s, e)`, sin solapes, en cualquier
-orden); un hueco significa «condiciones no registradas», no «seco» ni «sin cambios». `track` (obligatorio) es el estado
+orden); un hueco significa «condiciones no registradas», no «seco» ni «sin cambios». Una entrada DEBE llevar `source` y al
+menos uno de `track`, `weather`, `light`, `airTemp` y `trackTemp`; un campo ausente no se registró en ese intervalo.
+`track` (opcional) es el estado
 de la pista: `dry` (seca), `wet` (mojada, con agua o toda la superficie húmeda) o `damp` (entre las dos: zonas mojadas
 en una pista seca, o una pista que se está secando o mojando). `weather` (opcional) es el cielo: `clear`, `cloudy`,
 `rain`, `snow` o `fog`; no describe la superficie (una pista puede estar `wet` con cielo `clear` tras la lluvia).
@@ -114,7 +116,8 @@ salen los valores: `declared` (lo declara el piloto u otro usuario), `measured` 
 estima un servicio meteorológico, una previsión o un modelo). Una entrada tiene una sola fuente; si mezcla orígenes se
 escribe el menos directo (`estimated` antes que `declared`, y este antes que `measured`). Los productores NO DEBERÍAN
 presentar valores estimados como `declared` o `measured`.
-Un lector ignora todo el campo si alguna entrada no es un objeto, le falta `s`, `e`, `track` o `source`, tiene un tipo
+Un lector ignora todo el campo si alguna entrada no es un objeto, le falta `s`, `e` o `source`, no tiene
+ninguno de `track`, `weather`, `light`, `airTemp` y `trackTemp`, tiene un tipo
 JSON erróneo (también `null` en un campo opcional o una temperatura que no es un número), un valor de `track`,
 `weather`, `light` o `source` que no está en las listas (distinguen mayúsculas), `e <= s` o se solapa con otra; el resto
 del fichero se lee igual y los campos desconocidos de una entrada se ignoran. Las listas están cerradas en 1.4: una

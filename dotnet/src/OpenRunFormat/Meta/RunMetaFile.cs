@@ -81,10 +81,12 @@ public static class RunMetaFile
                 w.WriteStartArray("conditions");
                 foreach (var c in meta.Conditions)
                 {
+                    if (!c.HasValues)
+                        throw new ArgumentException("A condition interval needs at least one of track, weather, light, airTemp and trackTemp.", nameof(meta));
                     w.WriteStartObject();
                     w.WriteNumber("s", c.S);
                     w.WriteNumber("e", c.E);
-                    w.WriteString("track", Name(c.Track));
+                    if (c.Track is { } track) w.WriteString("track", Name(track));
                     if (c.Weather is { } weather) w.WriteString("weather", Name(weather));
                     if (c.Light is { } light) w.WriteString("light", Name(light));
                     if (c.AirTemp is { } air) w.WriteNumber("airTemp", air);
@@ -203,8 +205,8 @@ public static class RunMetaFile
         return result;
     }
 
-    // Like drivers, a malformed list (missing or unknown track/source, unknown weather/light, non-numeric temperature,
-    // e <= s, overlap) is ignored as a whole; the rest of the file still reads. Unknown fields of an entry are ignored.
+    // Like drivers, a malformed list (missing or unknown source, no condition at all, unknown track/weather/light,
+    // non-numeric temperature, e <= s, overlap) is ignored as a whole; the rest of the file still reads. Unknown fields of an entry are ignored.
     private static List<ConditionInterval> ReadConditions(JsonElement root)
     {
         var result = new List<ConditionInterval>();
@@ -215,14 +217,16 @@ public static class RunMetaFile
                 || !TryGet(c, "s", JsonValueKind.Number, out var sEl) || !sEl.TryGetInt64(out var s)
                 || !TryGet(c, "e", JsonValueKind.Number, out var eEl) || !eEl.TryGetInt64(out var e)
                 || e <= s
-                || !TryGet(c, "track", JsonValueKind.String, out var trackEl) || ParseTrack(trackEl.GetString()) is not { } track
                 || !TryGet(c, "source", JsonValueKind.String, out var srcEl) || ParseSource(srcEl.GetString()) is not { } source
+                || !TryOptional(c, "track", ParseTrack, out var track)
                 || !TryOptional(c, "weather", ParseWeather, out var weather)
                 || !TryOptional(c, "light", ParseLight, out var light)
                 || !TryTemperature(c, "airTemp", out var airTemp)
                 || !TryTemperature(c, "trackTemp", out var trackTemp))
                 return [];
-            result.Add(new ConditionInterval(s, e, track, source, weather, light, airTemp, trackTemp));
+            var interval = new ConditionInterval(s, e, source, track, weather, light, airTemp, trackTemp);
+            if (!interval.HasValues) return [];
+            result.Add(interval);
         }
         result.Sort((a, b) => a.S.CompareTo(b.S));
         for (var i = 1; i < result.Count; i++)

@@ -257,6 +257,7 @@ public class ConformanceTests
     [Theory]
     [InlineData("""[{"s":0,"e":10,"track":"slippery","source":"declared"}]""")]
     [InlineData("""[{"s":0,"e":10,"track":"dry"}]""")]
+    [InlineData("""[{"s":0,"e":10,"source":"declared"}]""")]
     [InlineData("""[{"s":0,"e":10,"track":"dry","source":"declared","light":"dawn"}]""")]
     [InlineData("""[{"s":0,"e":10,"track":"dry","source":"declared","airTemp":"20"}]""")]
     public void Esquema_runmeta_rechaza_conditions_mal_formadas(string conditions)

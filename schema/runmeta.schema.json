@@ -42,11 +42,18 @@
       }
     },
     "conditions": {
-      "description": "Track, weather and light conditions by interval (added in 1.4). Temperatures in degrees Celsius. Readers ignore the whole field when an entry is malformed or intervals overlap.",
+      "description": "Track, weather and light conditions by interval (added in 1.4). Each entry has source and at least one of track, weather, light, airTemp and trackTemp. Temperatures in degrees Celsius. Readers ignore the whole field when an entry is malformed or intervals overlap.",
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["s", "e", "track", "source"],
+        "required": ["s", "e", "source"],
+        "anyOf": [
+          { "required": ["track"] },
+          { "required": ["weather"] },
+          { "required": ["light"] },
+          { "required": ["airTemp"] },
+          { "required": ["trackTemp"] }
+        ],
         "properties": {
           "s": { "type": "integer" },
           "e": { "type": "integer" },
