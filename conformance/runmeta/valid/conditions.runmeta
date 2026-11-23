@@ -1,0 +1,8 @@
+{
+  "orf": "1.4", "id": "conf-1", "runlogSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "conditions": [
+    { "s": 1767225600000000000, "e": 1767226200000000000, "track": "damp", "weather": "cloudy", "light": "dusk", "airTemp": 11.5, "trackTemp": 14, "source": "declared" },
+    { "s": 1767226200000000000, "e": 1767226800000000000, "track": "wet", "weather": "rain", "source": "estimated" },
+    { "s": 1767227400000000000, "e": 1767228000000000000, "track": "dry", "trackTemp": 18.2, "source": "measured" }
+  ]
+}

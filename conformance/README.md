@@ -8,7 +8,8 @@ Files a reader of Open Run Format can test itself against.
 - `invalid/`: each file must be rejected.
 - `runmeta/valid/`: each `*.runmeta` must be read without errors; its `*.expected.json` gives, for the keys it has, the
   number of driver intervals (`drivers`; an ignored field counts 0), of parameter descriptions (`parameters`; ignored
-  entries do not count) and of keys in the first setup interval (`setupKeys`) a reader must report, see SPEC §8 and §9.
+  entries do not count), of keys in the first setup interval (`setupKeys`) and of condition intervals (`conditions`; an
+  ignored field counts 0) a reader must report, see SPEC §8 and §9.
   Files named `*-ignored` hold a malformed optional field or entry that a reader ignores; the others match
   `schema/runmeta.schema.json`.
 - `runsetup/valid/`: each `*.runsetup` must be read without errors and match `schema/runsetup.schema.json`; its

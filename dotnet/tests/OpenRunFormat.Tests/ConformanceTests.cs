@@ -132,6 +132,7 @@ public class ConformanceTests
         if (expected.TryGetProperty("drivers", out var ed)) Assert.Equal(ed.GetInt32(), meta.Drivers.Count);
         if (expected.TryGetProperty("parameters", out var ep)) Assert.Equal(ep.GetInt32(), meta.Parameters.Count);
         if (expected.TryGetProperty("setupKeys", out var ek)) Assert.Equal(ek.GetInt32(), meta.Setup[0].Values.Count);
+        if (expected.TryGetProperty("conditions", out var ec)) Assert.Equal(ec.GetInt32(), meta.Conditions.Count);
     }
 
     [Theory]
@@ -251,6 +252,18 @@ public class ConformanceTests
              "x-b":{"name":{"en":"B"},"type":"decimal","scope":"axle","precision":2}}}
             """);
         Assert.True(RunmetaSchema.Value.Evaluate(json.RootElement).IsValid);
+    }
+
+    [Theory]
+    [InlineData("""[{"s":0,"e":10,"track":"slippery","source":"declared"}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"dry"}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"dry","source":"declared","light":"dawn"}]""")]
+    [InlineData("""[{"s":0,"e":10,"track":"dry","source":"declared","airTemp":"20"}]""")]
+    public void Esquema_runmeta_rechaza_conditions_mal_formadas(string conditions)
+    {
+        using var json = JsonDocument.Parse(
+            $$"""{"orf":"1.4","id":"r","runlogSha256":"{{new string('0', 64)}}","conditions":{{conditions}}}""");
+        Assert.False(RunmetaSchema.Value.Evaluate(json.RootElement).IsValid);
     }
 
     [Theory]
